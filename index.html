@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일본 전국 일주 부루마블</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header id="top-bar">
+            <div class="info-row">
+                <span id="player-name" class="badge">이름을 입력해주세요</span>
+                <span id="player-money" class="badge money-badge">0엔</span>
+            </div>
+            <div class="info-row">
+                <span id="top-ranker-info" style="font-size: 13px; font-weight: 600; color: #a0aec0;">현재 1위: -</span>
+                <div>
+                    <button id="btn-ranking" class="top-btn">🏆 순위표</button>
+                    <!-- 게임 규칙 버튼 -->
+                    <button id="btn-info" class="top-btn">ℹ️ 규칙</button>
+                    <!-- 🔥 [새 기능] 관리자 리셋 버튼 -->
+                    <button id="btn-admin-reset" class="top-btn" style="background: rgba(229, 62, 62, 0.2); border-color: #fc8181; color: #fed7d7;">⚙️ 리셋</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 전원 출석 미션 현황판 -->
+        <div id="mission-banner" class="mission-banner">
+            🎯 오늘의 전원 출석 미션: <span id="attendance-count">0</span> / 12명 참여! (전원 달성 시 내일 보너스)
+        </div>
+
+        <main id="board-container">
+            <div id="board"></div>
+        </main>
+
+        <footer id="bottom-bar">
+            <button id="btn-quiz" class="action-btn">🌸 오늘의 퀴즈 풀고 주사위 얻기</button>
+            <button id="btn-roll" class="action-btn roll-btn">🎲 주사위 굴리기</button>
+        </footer>
+    </div>
+
+    <!-- 로그인 모달 -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="color: #e53e3e; margin-bottom: 20px;">⛩️ 일본 일주 부루마블</h2>
+            <p style="margin-bottom: 15px; color: #4a5568;">사용할 이름을 입력해주세요!</p>
+            <input type="text" id="player-name-input" placeholder="이름 입력" style="padding: 12px; border-radius: 8px; border: 2px solid #edf2f7; margin-bottom: 15px; font-size: 16px; text-align: center; width: 100%; outline: none;">
+            <button id="btn-login" class="action-btn" style="background: #fc8181; width: 100%;">게임 시작</button>
+        </div>
+    </div>
+
+    <!-- 퀴즈 모달 -->
+    <div id="quiz-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="quiz-title">📝 퀴즈 타임!</h2>
+            <p id="quiz-question">문제가 여기에 표시됩니다.</p>
+            <div id="quiz-options"></div>
+        </div>
+    </div>
+
+    <!-- 순위표 모달 -->
+    <div id="ranking-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>🏆 전체 순위</h2>
+            <div id="ranking-list"></div>
+            <button id="btn-close-ranking" class="action-btn" style="background: #e53e3e; margin-top: 10px;">닫기</button>
+        </div>
+    </div>
+
+    <!-- 게임 규칙(정보) 모달 -->
+    <div id="info-modal" class="modal hidden">
+        <div class="modal-content info-content" style="overflow-y: auto;">
+            <h2>📜 게임 이용 규칙</h2>
+            <p><strong>🎲 주사위 획득 (O/X 퀴즈)</strong><br>하루 2회(오전/오후) 퀴즈 3문제를 풀어 주사위와 상금을 획득합니다.<br>• 3문제 정답: 주사위 2개 + 5,000엔<br>• 2문제 정답: 주사위 2개 + 2,000엔<br>• 1문제 정답: 주사위 1개 + 1,000엔<br>• 0문제 정답: <b>주사위 획득 실패 😢</b></p>
+            <p><strong>🎁 첫 퀴즈 한정: 정착 지원금</strong><br>가장 처음 푸는 퀴즈의 정답 수에 따라 최대 30,000엔의 정착금을 추가 지급합니다! (0문제 정답 시 지원금 박탈)</p>
+            <p><strong>🏗️ 도시 건설 및 증축 (현대 디지털 룰)</strong><br>빈 도시에 도착하면 <b>마치야(1단계)</b> 또는 <b>료칸(2단계)</b>까지 지을 수 있습니다. 랜드마크인 <b>천수각(3단계)</b>은 자신의 도시에 다시 재방문했을 때만 증축할 수 있습니다.<br>• 마치야 비용: 기본 땅값 (통행료 1배)<br>• 료칸 비용: 기본 땅값의 3배 (통행료 3배)<br>• 천수각 비용: 기본 땅값의 5배 (통행료 6배)</p>
+            <p><strong>🤝 도시 인수 (뺏기)</strong><br>다른 사람의 도시에 도착하면 통행료를 낸 후, <b>건물 가치의 2배</b>를 지불하여 도시를 인수할 수 있습니다. 단, 랜드마크인 <b>천수각</b>은 절대 인수할 수 없습니다.</p>
+            <p><strong>✨ 기타 규칙</strong><br>보드판 1바퀴를 돌아 출발지를 통과할 때마다 여행 지원금 10,000엔을 받습니다.</p>
+            <button id="btn-close-info" class="action-btn" style="background: #e53e3e; margin-top: 5px;">확인했습니다</button>
+        </div>
+    </div>
+
+    <!-- 건설(건물 선택) 모달 -->
+    <div id="build-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="build-title" style="color: #e53e3e;">도시 이름</h2>
+            <p id="build-desc" style="margin-bottom: 15px; font-weight: bold; color: #4a5568;">어떤 건물을 세우시겠습니까?</p>
+            <div id="build-options" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+    </div>
+
+    <!-- 주사위 굴림 이펙트 -->
+    <div id="dice-overlay" class="hidden">
+        <div id="dice-wrapper"></div>
+        <div id="dice-result-text">주사위를 굴리는 중...</div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
