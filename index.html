@@ -2,654 +2,100 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>일본어 쓰기 & 퀴즈 트레이너</title>
-    <style>
-        :root {
-            --primary-color: #2e7d32;
-            --primary-light: #e8f5e9;
-            --bg-color: #f8f9fa;
-            --text-color: #333;
-        }
-        body {
-            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            /* touch-action: none; <- 스크롤을 막던 주범 삭제 완료! */
-            min-height: 100vh;
-        }
-        header {
-            width: 100%;
-            background-color: #fff;
-            padding: 12px 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box;
-        }
-        .header-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            cursor: pointer;
-        }
-        .home-btn {
-            padding: 5px 12px;
-            font-size: 0.8rem;
-            border: none;
-            border-radius: 12px;
-            background: #e9ecef;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .main-container {
-            width: 100%;
-            max-width: 500px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 15px;
-            box-sizing: border-box;
-            justify-content: center;
-        }
-
-        .card {
-            background: white;
-            width: 100%;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            position: relative;
-        }
-
-        .section-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #495057;
-        }
-
-        .back-nav-btn {
-            align-self: flex-start;
-            margin-bottom: 10px;
-            padding: 6px 14px;
-            font-size: 0.85rem;
-            border: none;
-            border-radius: 8px;
-            background: #e9ecef;
-            cursor: pointer;
-            font-weight: bold;
-            color: #495057;
-        }
-
-        .menu-btn-group {
-            display: flex;
-            gap: 12px;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-        .menu-select-btn {
-            flex: 1;
-            padding: 20px 10px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            border: 2px solid #dee2e6;
-            border-radius: 12px;
-            background: #fff;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .menu-select-btn:hover {
-            border-color: var(--primary-color);
-            background: var(--primary-light);
-            color: var(--primary-color);
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            width: 100%;
-            margin-bottom: 10px;
-        }
-        .char-grid-btn {
-            aspect-ratio: 1;
-            font-size: 1.1rem;
-            border-radius: 8px;
-            border: 1px solid #ced4da;
-            background: #fff;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.1s;
-        }
-        .char-grid-btn.selected {
-            border: 2px solid #1976D2;
-            background: #e3f2fd;
-            color: #1565C0;
-        }
-        .char-grid-btn.passed {
-            background: var(--primary-light);
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .canvas-container {
-            position: relative;
-            background-color: #fff;
-            box-shadow: inset 0 0 0 2px #e9ecef;
-            border-radius: 12px;
-            overflow: hidden;
-            width: 280px;
-            height: 280px;
-            margin: 8px 0;
-        }
-        canvas {
-            display: block;
-            touch-action: none; /* 캔버스 안에서만 스크롤 방지 */
-        }
-        #guideCanvas, #quizGuideCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            opacity: 0.22;
-        }
-        #drawCanvas, #quizDrawCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 2;
-            cursor: crosshair;
-        }
-
-        .controls {
-            margin-top: 12px;
-            display: flex;
-            gap: 6px;
-            width: 100%;
-            justify-content: center;
-        }
-        button.action-btn {
-            padding: 9px 12px;
-            font-size: 0.85rem;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .undo-btn { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
-        #clearBtn { background-color: #e9ecef; color: #495057; }
-        #submitBtn { background-color: var(--primary-color); color: white; }
-
-        .score-display { font-size: 1.3rem; font-weight: 800; margin-top: 4px; }
-        .status-msg { font-size: 0.9rem; font-weight: bold; }
-        .pass { color: #1976D2; }
-        .fail { color: #E53935; }
-
-        .quiz-header-info {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            font-size: 0.95rem;
-            color: #6c757d;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .quiz-type-badge {
-            background: var(--primary-light);
-            color: var(--primary-color);
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            margin-bottom: 8px;
-            display: inline-block;
-        }
-        .quiz-target-info {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin: 5px 0 15px 0;
-        }
-
-        .hidden { display: none !important; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일본 전국 일주 부루마블</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <div class="header-title" onclick="goHome()">🇯🇵 일본어 트레이너</div>
-        <button id="homeBtn" class="home-btn hidden" onclick="goHome()">처음으로</button>
-    </header>
-
-    <div class="main-container">
-        <!-- STEP 1: 문자 종류 선택 -->
-        <div id="stepCharSelect" class="card">
-            <div class="section-title">학습할 문자를 선택하세요</div>
-            <div class="menu-btn-group">
-                <button class="menu-select-btn" onclick="selectKanaType('hira')">히라가나<br><span style="font-size:0.8rem; color:#6c757d; font-weight:normal;">あいうえお</span></button>
-                <button class="menu-select-btn" onclick="selectKanaType('kata')">가타카나<br><span style="font-size:0.8rem; color:#6c757d; font-weight:normal;">アイウエオ</span></button>
+    <div id="app">
+        <header id="top-bar">
+            <div class="info-row">
+                <span id="player-name" class="badge">이름을 입력해주세요</span>
+                <span id="player-money" class="badge money-badge">0엔</span>
             </div>
+            <div class="info-row">
+                <span id="top-ranker-info" style="font-size: 13px; font-weight: 600; color: #a0aec0;">현재 1위: -</span>
+                <div>
+                    <button id="btn-ranking" class="top-btn">🏆 순위표</button>
+                    <!-- 게임 규칙 버튼 -->
+                    <button id="btn-info" class="top-btn">ℹ️ 규칙</button>
+                    <!-- 🔥 [새 기능] 관리자 리셋 버튼 -->
+                    <button id="btn-admin-reset" class="top-btn" style="background: rgba(229, 62, 62, 0.2); border-color: #fc8181; color: #fed7d7;">⚙️ 리셋</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 전원 출석 미션 현황판 -->
+        <div id="mission-banner" class="mission-banner">
+            🎯 오늘의 전원 출석 미션: <span id="attendance-count">0</span> / 12명 참여! (전원 달성 시 내일 보너스)
         </div>
 
-        <!-- STEP 2: 학습/퀴즈 모드 선택 -->
-        <div id="stepModeSelect" class="card hidden">
-            <button class="back-nav-btn" onclick="goHome()">← 문자 다시 고르기</button>
-            <div class="section-title" id="selectedTypeTitle" style="margin-top: 5px;">히라가나 학습</div>
-            <div class="menu-btn-group" style="flex-direction: column;">
-                <button class="menu-select-btn" onclick="startMode('study')">✏️ 기본 쓰기 학습</button>
-                <button class="menu-select-btn" onclick="startMode('quiz')">🎯 랜덤 쓰기 퀴즈 (10문항)</button>
-            </div>
-        </div>
+        <main id="board-container">
+            <div id="board"></div>
+        </main>
 
-        <!-- STEP 3-1: 기본 쓰기 학습 페이지 -->
-        <div id="modeStudy" class="card hidden" style="padding: 15px;">
-            <button class="back-nav-btn" onclick="goToModeSelect()">← 모드 선택으로</button>
-            <div class="grid-container" id="kanaGrid" style="margin-top: 25px;"></div>
-            <div style="font-size: 1rem; font-weight: bold; margin: 6px 0;" id="currentTargetLabel">현재 글자: あ</div>
-            
-            <div class="canvas-container">
-                <canvas id="guideCanvas"></canvas>
-                <canvas id="drawCanvas"></canvas>
-            </div>
+        <footer id="bottom-bar">
+            <button id="btn-quiz" class="action-btn">🌸 오늘의 퀴즈 풀고 주사위 얻기</button>
+            <button id="btn-roll" class="action-btn roll-btn">🎲 주사위 굴리기</button>
+        </footer>
+    </div>
 
-            <div class="controls">
-                <button class="action-btn undo-btn" onclick="studyEnv.undo()">이전 획</button>
-                <button id="clearBtn" class="action-btn" onclick="studyEnv.clear()">전체 지우기</button>
-                <button id="submitBtn" class="action-btn" onclick="checkScore()">채점하기</button>
-            </div>
-
-            <div style="height: 45px; margin-top: 5px;">
-                <div id="scoreDisplay" class="score-display"></div>
-                <div id="statusMsg" class="status-msg"></div>
-            </div>
-        </div>
-
-        <!-- STEP 3-2: 랜덤 쓰기 퀴즈 페이지 -->
-        <div id="modeQuiz" class="card hidden">
-            <button class="back-nav-btn" onclick="goToModeSelect()">← 모드 선택으로</button>
-            <div id="quizTypeBadge" class="quiz-type-badge">히라가나 퀴즈</div>
-            <div class="quiz-header-info">
-                <span id="quizProgressCount">문제 1 / 10</span>
-                <span>발음 문자를 써보세요</span>
-            </div>
-            <div class="quiz-target-info" id="quizPromptText">아 (a)</div>
-            
-            <div class="canvas-container">
-                <canvas id="quizGuideCanvas"></canvas>
-                <canvas id="quizDrawCanvas"></canvas>
-            </div>
-
-            <div class="controls">
-                <button class="action-btn undo-btn" onclick="quizEnv.undo()">이전 획</button>
-                <button class="action-btn" id="quizClearBtn" onclick="quizEnv.clear()">전체 지우기</button>
-                <button class="action-btn" style="background:#1976D2; color:white;" onclick="toggleQuizAnswer()">정답 보기</button>
-                <button class="action-btn" style="background:var(--primary-color); color:white;" onclick="nextQuiz()" id="nextQuizBtn">다음 문제</button>
-            </div>
+    <!-- 로그인 모달 -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="color: #e53e3e; margin-bottom: 20px;">⛩️ 일본 일주 부루마블</h2>
+            <p style="margin-bottom: 15px; color: #4a5568;">사용할 이름을 입력해주세요!</p>
+            <input type="text" id="player-name-input" placeholder="이름 입력" style="padding: 12px; border-radius: 8px; border: 2px solid #edf2f7; margin-bottom: 15px; font-size: 16px; text-align: center; width: 100%; outline: none;">
+            <button id="btn-login" class="action-btn" style="background: #fc8181; width: 100%;">게임 시작</button>
         </div>
     </div>
 
-    <script>
-        const HIRA_LIST = [
-            "あ","い","う","え","お",
-            "か","き","く","け","こ",
-            "さ","し","す","せ","そ",
-            "た","ち","つ","て","と",
-            "な","に","ぬ","ね","の",
-            "は","ひ","ふ","へ","ほ",
-            "ま","み","む","め","も",
-            "や","ゆ","よ",
-            "ら","り","る","れ","ろ",
-            "わ","を","ん"
-        ];
-        const KATA_LIST = [
-            "ア","イ","ウ","エ","オ",
-            "カ","キ","ク","ケ","コ",
-            "サ","シ","ス","セ","ソ",
-            "タ","チ","ツ","テ","ト",
-            "ナ","ニ","ヌ","ネ","ノ",
-            "ハ","ヒ","フ","ヘ","ホ",
-            "マ","ミ","ム","メ","モ",
-            "ヤ","ユ","ヨ",
-            "ラ","リ","ル","レ","ロ",
-            "ワ","ヲ","ン"
-        ];
+    <!-- 퀴즈 모달 -->
+    <div id="quiz-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="quiz-title">📝 퀴즈 타임!</h2>
+            <p id="quiz-question">문제가 여기에 표시됩니다.</p>
+            <div id="quiz-options"></div>
+        </div>
+    </div>
 
-        const KANA_INFO = {
-            "あ":"아 (a)", "い":"이 (i)", "う":"우 (u)", "え":"에 (e)", "お":"오 (o)",
-            "か":"카 (ka)", "き":"키 (ki)", "く":"쿠 (ku)", "け":"케 (ke)", "こ":"코 (ko)",
-            "さ":"사 (sa)", "し":"시 (shi/si)", "す":"수 (su)", "せ":"세 (se)", "そ":"소 (so)",
-            "た":"타 (ta)", "ち":"치 (chi/ti)", "つ":"츠 (tsu/tu)", "て":"테 (te)", "と":"토 (to)",
-            "な":"나 (na)", "に":"니 (ni)", "ぬ":"누 (nu)", "ね":"네 (ne)", "の":"노 (no)",
-            "は":"하 (ha)", "ひ":"히 (hi)", "ふ":"후 (fu/hu)", "へ":"헤 (he)", "ほ":"호 (ho)",
-            "ま":"마 (ma)", "み":"미 (mi)", "む":"무 (mu)", "め":"메 (me)", "も":"모 (mo)",
-            "や":"야 (ya)", "ゆ":"유 (yu)", "よ":"요 (yo)",
-            "ら":"라 (ra)", "り":"리 (ri)", "る":"루 (ru)", "れ":"레 (re)", "ろ":"로 (ro)",
-            "わ":"와 (wa)", "を":"오 (wo)", "ん":"응 (n)",
-            // 가타카나
-            "ア":"아 (a)", "イ":"이 (i)", "ウ":"우 (u)", "エ":"에 (e)", "オ":"오 (o)",
-            "カ":"카 (ka)", "キ":"키 (ki)", "ク":"쿠 (ku)", "ケ":"케 (ke)", "コ":"코 (ko)",
-            "サ":"사 (sa)", "シ":"시 (shi/si)", "ス":"수 (su)", "セ":"세 (se)", "ソ":"소 (so)",
-            "タ":"타 (ta)", "チ":"치 (chi/ti)", "ツ":"츠 (tsu/tu)", "テ":"테 (te)", "ト":"토 (to)",
-            "ナ":"나 (na)", "ニ":"니 (ni)", "ヌ":"누 (nu)", "ネ":"네 (ne)", "ノ":"노 (no)",
-            "ハ":"하 (ha)", "ヒ":"히 (hi)", "フ":"후 (fu/hu)", "ヘ":"헤 (he)", "ホ":"호 (ho)",
-            "マ":"마 (ma)", "ミ":"미 (mi)", "ム":"무 (mu)", "メ":"메 (me)", "モ":"모 (mo)",
-            "ヤ":"야 (ya)", "ユ":"유 (yu)", "ヨ":"요 (yo)",
-            "ラ":"라 (ra)", "リ":"리 (ri)", "ル":"루 (ru)", "レ":"레 (re)", "ロ":"로 (ro)",
-            "ワ":"와 (wa)", "ヲ":"오 (wo)", "ン":"응 (n)"
-        };
+    <!-- 순위표 모달 -->
+    <div id="ranking-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>🏆 전체 순위</h2>
+            <div id="ranking-list"></div>
+            <button id="btn-close-ranking" class="action-btn" style="background: #e53e3e; margin-top: 10px;">닫기</button>
+        </div>
+    </div>
 
-        let currentType = 'hira';
-        let currentChar = 'あ';
-        let passedChars = {};
-        let isAnswerShown = false;
+    <!-- 게임 규칙(정보) 모달 -->
+    <div id="info-modal" class="modal hidden">
+        <div class="modal-content info-content" style="overflow-y: auto;">
+            <h2>📜 게임 이용 규칙</h2>
+            <p><strong>🎲 주사위 획득 (O/X 퀴즈)</strong><br>하루 2회(오전/오후) 퀴즈 3문제를 풀어 주사위와 상금을 획득합니다.<br>• 3문제 정답: 주사위 2개 + 5,000엔<br>• 2문제 정답: 주사위 2개 + 2,000엔<br>• 1문제 정답: 주사위 1개 + 1,000엔<br>• 0문제 정답: <b>주사위 획득 실패 😢</b></p>
+            <p><strong>🎁 첫 퀴즈 한정: 정착 지원금</strong><br>가장 처음 푸는 퀴즈의 정답 수에 따라 최대 30,000엔의 정착금을 추가 지급합니다! (0문제 정답 시 지원금 박탈)</p>
+            <p><strong>🏗️ 도시 건설 및 증축 (현대 디지털 룰)</strong><br>빈 도시에 도착하면 <b>마치야(1단계)</b> 또는 <b>료칸(2단계)</b>까지 지을 수 있습니다. 랜드마크인 <b>천수각(3단계)</b>은 자신의 도시에 다시 재방문했을 때만 증축할 수 있습니다.<br>• 마치야 비용: 기본 땅값 (통행료 1배)<br>• 료칸 비용: 기본 땅값의 3배 (통행료 3배)<br>• 천수각 비용: 기본 땅값의 5배 (통행료 6배)</p>
+            <p><strong>🤝 도시 인수 (뺏기)</strong><br>다른 사람의 도시에 도착하면 통행료를 낸 후, <b>건물 가치의 2배</b>를 지불하여 도시를 인수할 수 있습니다. 단, 랜드마크인 <b>천수각</b>은 절대 인수할 수 없습니다.</p>
+            <p><strong>✨ 기타 규칙</strong><br>보드판 1바퀴를 돌아 출발지를 통과할 때마다 여행 지원금 10,000엔을 받습니다.</p>
+            <button id="btn-close-info" class="action-btn" style="background: #e53e3e; margin-top: 5px;">확인했습니다</button>
+        </div>
+    </div>
 
-        let quizList = [];
-        let quizIndex = 0;
-        let currentQuizChar = 'あ';
+    <!-- 건설(건물 선택) 모달 -->
+    <div id="build-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="build-title" style="color: #e53e3e;">도시 이름</h2>
+            <p id="build-desc" style="margin-bottom: 15px; font-weight: bold; color: #4a5568;">어떤 건물을 세우시겠습니까?</p>
+            <div id="build-options" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+    </div>
 
-        function goHome() {
-            document.getElementById('stepCharSelect').classList.remove('hidden');
-            document.getElementById('stepModeSelect').classList.add('hidden');
-            document.getElementById('modeStudy').classList.add('hidden');
-            document.getElementById('modeQuiz').classList.add('hidden');
-            document.getElementById('homeBtn').classList.add('hidden');
-        }
-
-        function goToModeSelect() {
-            document.getElementById('stepModeSelect').classList.remove('hidden');
-            document.getElementById('modeStudy').classList.add('hidden');
-            document.getElementById('modeQuiz').classList.add('hidden');
-            document.getElementById('homeBtn').classList.remove('hidden');
-        }
-
-        function selectKanaType(type) {
-            currentType = type;
-            document.getElementById('selectedTypeTitle').innerText = type === 'hira' ? '히라가나 학습' : '가타카나 학습';
-            document.getElementById('stepCharSelect').classList.add('hidden');
-            document.getElementById('stepModeSelect').classList.remove('hidden');
-            document.getElementById('homeBtn').classList.remove('hidden');
-        }
-
-        function startMode(mode) {
-            document.getElementById('stepModeSelect').classList.add('hidden');
-            if (mode === 'study') {
-                document.getElementById('modeStudy').classList.remove('hidden');
-                currentChar = currentType === 'hira' ? 'あ' : 'ア';
-                document.getElementById('currentTargetLabel').innerText = `현재 글자: ${currentChar}`;
-                renderKanaGrid();
-                studyEnv.clear();
-                drawGuide(studyEnv, currentChar);
-            } else if (mode === 'quiz') {
-                document.getElementById('modeQuiz').classList.remove('hidden');
-                document.getElementById('quizTypeBadge').innerText = currentType === 'hira' ? '히라가나 퀴즈' : '가타카나 퀴즈';
-                initQuizSet();
-            }
-        }
-
-        /* 획 배열까지 완벽히 초기화되는 캔버스 세팅 함수 */
-        function setupCanvasPair(drawCanvasId, guideCanvasId) {
-            const drawCanvas = document.getElementById(drawCanvasId);
-            const guideCanvas = document.getElementById(guideCanvasId);
-            
-            const drawCtx = drawCanvas.getContext('2d', { willReadFrequently: true });
-            const guideCtx = guideCanvas.getContext('2d', { willReadFrequently: true });
-            
-            const size = 280;
-            let dpr = window.devicePixelRatio || 1;
-            let isDrawing = false;
-            let strokes = [];
-            let currentStroke = [];
-            let lastX = 0, lastY = 0;
-
-            drawCanvas.width = size * dpr;
-            drawCanvas.height = size * dpr;
-            guideCanvas.width = size * dpr;
-            guideCanvas.height = size * dpr;
-            drawCanvas.style.width = size + 'px';
-            drawCanvas.style.height = size + 'px';
-            guideCanvas.style.width = size + 'px';
-            guideCanvas.style.height = size + 'px';
-
-            drawCtx.scale(dpr, dpr);
-            guideCtx.scale(dpr, dpr);
-
-            drawCtx.lineCap = 'round';
-            drawCtx.lineJoin = 'round';
-            drawCtx.lineWidth = 11;
-            drawCtx.strokeStyle = '#212529';
-
-            function redrawStrokes() {
-                drawCtx.clearRect(0, 0, size, size);
-                drawCtx.beginPath();
-                strokes.forEach(stroke => {
-                    if (stroke.length < 2) return;
-                    drawCtx.beginPath();
-                    drawCtx.moveTo(stroke[0].x, stroke[0].y);
-                    for (let i = 1; i < stroke.length; i++) {
-                        drawCtx.lineTo(stroke[i].x, stroke[i].y);
-                    }
-                    drawCtx.lineWidth = 11;
-                    drawCtx.stroke();
-                });
-            }
-
-            drawCanvas.addEventListener('pointerdown', (e) => {
-                isDrawing = true;
-                const rect = drawCanvas.getBoundingClientRect();
-                lastX = e.clientX - rect.left;
-                lastY = e.clientY - rect.top;
-                currentStroke = [{x: lastX, y: lastY}];
-                drawCtx.beginPath();
-            });
-
-            drawCanvas.addEventListener('pointermove', (e) => {
-                if (!isDrawing) return;
-                e.preventDefault();
-                const rect = drawCanvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                drawCtx.beginPath();
-                drawCtx.moveTo(lastX, lastY);
-                drawCtx.lineTo(x, y);
-                drawCtx.lineWidth = (e.pointerType === 'pen' && e.pressure) ? 11 + (e.pressure * 4) : 11;
-                drawCtx.stroke();
-                
-                lastX = x;
-                lastY = y;
-                currentStroke.push({x, y});
-            });
-
-            const stop = () => {
-                if (isDrawing) {
-                    isDrawing = false;
-                    if (currentStroke.length > 1) {
-                        strokes.push([...currentStroke]);
-                    }
-                    currentStroke = [];
-                    drawCtx.beginPath();
-                }
-            };
-            drawCanvas.addEventListener('pointerup', stop);
-            drawCanvas.addEventListener('pointerout', stop);
-
-            return { 
-                drawCanvas, guideCanvas, drawCtx, guideCtx, size, dpr,
-                clear: function() {
-                    strokes.length = 0;
-                    currentStroke.length = 0;
-                    drawCtx.clearRect(0, 0, size, size);
-                    drawCtx.beginPath();
-                    if (drawCanvasId === 'drawCanvas') {
-                        document.getElementById('scoreDisplay').innerText = '';
-                        document.getElementById('statusMsg').innerText = '';
-                    }
-                },
-                undo: function() {
-                    if (strokes.length > 0) {
-                        strokes.pop();
-                        redrawStrokes();
-                    } else {
-                        drawCtx.clearRect(0, 0, size, size);
-                        drawCtx.beginPath();
-                    }
-                }
-            };
-        }
-
-        const studyEnv = setupCanvasPair('drawCanvas', 'guideCanvas');
-        const quizEnv = setupCanvasPair('quizDrawCanvas', 'quizGuideCanvas');
-
-        function renderKanaGrid() {
-            const grid = document.getElementById('kanaGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            const list = currentType === 'hira' ? HIRA_LIST : KATA_LIST;
-            list.forEach(ch => {
-                const btn = document.createElement('button');
-                let className = 'char-grid-btn';
-                if (ch === currentChar) className += ' selected';
-                if (passedChars[ch]) className += ' passed';
-                
-                btn.className = className;
-                btn.innerText = ch;
-                btn.onclick = () => {
-                    currentChar = ch;
-                    document.getElementById('currentTargetLabel').innerText = `현재 글자: ${ch}`;
-                    renderKanaGrid();
-                    studyEnv.clear();
-                    drawGuide(studyEnv, currentChar);
-                };
-                grid.appendChild(btn);
-            });
-        }
-
-        function drawGuide(env, char) {
-            env.guideCtx.clearRect(0, 0, env.size, env.size);
-            env.guideCtx.font = "190px 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
-            env.guideCtx.textAlign = "center";
-            env.guideCtx.textBaseline = "middle";
-            env.guideCtx.fillStyle = "#000";
-            env.guideCtx.fillText(char, env.size / 2, env.size / 2 + 8);
-        }
-
-        function checkScore() {
-            const score = calculateCanvasScore(studyEnv, currentChar);
-            const scoreEl = document.getElementById('scoreDisplay');
-            const statusEl = document.getElementById('statusMsg');
-
-            scoreEl.innerText = `${score}/100점`;
-            if (score >= 80) {
-                scoreEl.className = 'score-display pass';
-                statusEl.className = 'status-msg pass';
-                statusEl.innerText = '통과 💮';
-                passedChars[currentChar] = true;
-                renderKanaGrid();
-            } else {
-                scoreEl.className = 'score-display fail';
-                statusEl.className = 'status-msg fail';
-                statusEl.innerText = '다시 써보세요 💦';
-            }
-        }
-
-        function calculateCanvasScore(env, targetChar) {
-            const drawData = env.drawCtx.getImageData(0, 0, env.drawCanvas.width, env.drawCanvas.height).data;
-            
-            const bufferCanvas = document.createElement('canvas');
-            bufferCanvas.width = env.drawCanvas.width;
-            bufferCanvas.height = env.drawCanvas.height;
-            const bCtx = bufferCanvas.getContext('2d', { willReadFrequently: true });
-            
-            bCtx.scale(env.dpr, env.dpr);
-            bCtx.font = "190px 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
-            bCtx.textAlign = "center";
-            bCtx.textBaseline = "middle";
-            bCtx.lineWidth = 14;
-            bCtx.lineJoin = 'round';
-            bCtx.strokeStyle = "black";
-            bCtx.strokeText(targetChar, env.size / 2, env.size / 2 + 8);
-            bCtx.fillStyle = "black";
-            bCtx.fillText(targetChar, env.size / 2, env.size / 2 + 8);
-            
-            const guideData = bCtx.getImageData(0, 0, env.drawCanvas.width, env.drawCanvas.height).data;
-            
-            let drawnPixels = 0;
-            let outOfBoundsPixels = 0;
-
-            for (let i = 0; i < drawData.length; i += 4) {
-                if (drawData[i + 3] > 10) {
-                    drawnPixels++;
-                    if (guideData[i + 3] < 10) outOfBoundsPixels++;
-                }
-            }
-
-            if (drawnPixels === 0) return 0;
-            const outRatio = outOfBoundsPixels / drawnPixels;
-            let score = Math.round(100 - (outRatio * 250));
-            return Math.max(0, Math.min(100, score));
-        }
-
-        function initQuizSet() {
-            const list = [...(currentType === 'hira' ? HIRA_LIST : KATA_LIST)];
-            quizList = list.sort(() => Math.random() - 0.5).slice(0, 10);
-            quizIndex = 0;
-            loadQuizItem();
-        }
-
-        function loadQuizItem() {
-            isAnswerShown = false;
-            quizEnv.clear();
-            quizEnv.guideCtx.clearRect(0, 0, quizEnv.size, quizEnv.size);
-
-            if (quizIndex < quizList.length) {
-                currentQuizChar = quizList[quizIndex];
-                document.getElementById('quizProgressCount').innerText = `문제 ${quizIndex + 1} / 10`;
-                document.getElementById('quizPromptText').innerText = KANA_INFO[currentQuizChar];
-                document.getElementById('nextQuizBtn').innerText = quizIndex === 9 ? '퀴즈 완료' : '다음 문제';
-            } else {
-                document.getElementById('quizProgressCount').innerText = '세트 완료!';
-                document.getElementById('quizPromptText').innerText = '🎉 10문항을 모두 풀었습니다!';
-                quizEnv.clear();
-                quizEnv.guideCtx.font = "24px sans-serif";
-                quizEnv.guideCtx.fillStyle = "#2e7d32";
-                quizEnv.guideCtx.textAlign = "center";
-                quizEnv.guideCtx.fillText("수고하셨습니다!", quizEnv.size / 2, quizEnv.size / 2);
-                document.getElementById('nextQuizBtn').innerText = '다시 풀기';
-                quizIndex = -1;
-            }
-        }
-
-        function nextQuiz() {
-            if (quizIndex === -1) {
-                initQuizSet();
-                return;
-            }
-            quizIndex++;
-            loadQuizItem();
-        }
-
-        function toggleQuizAnswer() {
-            if (quizIndex === -1) return;
-            if (!isAnswerShown) {
-                drawGuide(quizEnv, currentQuizChar);
-                isAnswerShown = true;
-            } else {
-                quizEnv.guideCtx.clearRect(0, 0, quizEnv.size, quizEnv.size);
-                isAnswerShown = false;
-            }
-        }
-    </script>
+    <!-- 주사위 굴림 이펙트 -->
+    <div id="dice-overlay" class="hidden">
+        <div id="dice-wrapper"></div>
+        <div id="dice-result-text">주사위를 굴리는 중...</div>
+    </div>
+    
+    <script src="script.js"></script>
 </body>
 </html>
