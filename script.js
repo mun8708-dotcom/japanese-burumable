@@ -426,6 +426,25 @@ document.addEventListener("DOMContentLoaded", () => {
         { chapter: 12, page: 137, question: "일본의 만화는 대사를 세로 방향으로 쓰기 때문에, 책을 읽을 때 우리나라와 반대로 오른쪽에서 왼쪽으로 읽고 줄을 바꾼다.", options: ["O", "X"], answerIndex: 0, explanation: "일본 만화는 대사가 세로 방향으로 쓰여 있어 오른쪽에서 왼쪽으로 읽는 것이 특징입니다." }
     ];
 
+    const goldenKeyQuizList = [
+        {
+            chapter: 1,
+            page: 15,
+            question: "일본어에서 '감사합니다'를 뜻하는 올바른 표현은 무엇일까요?",
+            options: ["오하요고자이마스", "아리가토고자이마스", "스미마센", "고멘나사이", "사요나라"],
+            answerIndex: 1, 
+            explanation: "아침 인사는 '오하요고자이마스', 감사는 '아리가토고자이마스'입니다."
+        },
+        {
+            chapter: 2,
+            page: 28,
+            question: "일본의 전통 의상인 '기모노'를 입을 때 주로 신는 신발의 이름은?",
+            options: ["게타", "조리", "스니커즈", "구두", "부츠"],
+            answerIndex: 0,
+            explanation: "기모노나 유카타를 입을 때는 주로 나무로 만든 굽이 있는 '게타'를 신습니다."
+        }
+    ];
+
     const checkQuizEligibility = () => {
         const now = new Date();
         const dateStr = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
