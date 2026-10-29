@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     // 🔥 여기에 구글 앱스 스크립트 '웹앱 배포 URL'을 넣으세요.
-    const API_URL = "https://docs.google.com/spreadsheets/d/1l5SKDoEr02_TLwdsdYC4hOT0DfLAuutsSJcnhBPIT6Y/edit?gid=0#gid=0";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxSYqWJ4PAaiGAUUBdeIAnOPBsCTpaORSrdoSq22bG4lBwxHjPT6ZLHJqxArnsvX6em/exec";
 
     const board = document.getElementById("board");
     const btnQuiz = document.getElementById("btn-quiz");
