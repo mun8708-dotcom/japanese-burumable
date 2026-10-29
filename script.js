@@ -452,11 +452,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const timeSlot = isPM ? "PM" : "AM";
         
         // --- 배포 시 아래 4줄의 맨 앞 '//' 를 지워주세요 ---
-        // const lastPlayed = localStorage.getItem(`quizPlayed_${dateStr}_${timeSlot}`);
-        // if (lastPlayed) {
-        //     alert("이미 오늘 " + (isPM ? "오후" : "오전") + " 퀴즈를 모두 푸셨습니다!\n(※ 하루 제한: 오전 1회 / 오후 1회)\n다음 시간대에 다시 도전해주세요.");
-        //     return false;
-        // }
+         const lastPlayed = localStorage.getItem(`quizPlayed_${dateStr}_${timeSlot}`);
+         if (lastPlayed) {
+             alert("이미 오늘 " + (isPM ? "오후" : "오전") + " 퀴즈를 모두 푸셨습니다!\n(※ 하루 제한: 오전 1회 / 오후 1회)\n다음 시간대에 다시 도전해주세요.");
+             return false;
+         }
 
         return { dateStr, timeSlot };
     };
