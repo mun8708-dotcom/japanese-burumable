@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 🔥 리셋 버튼 클릭 이벤트 (비밀번호: 0000)
     if (btnAdminReset) {
         btnAdminReset.addEventListener("click", async () => {
-            const pwd = prompt("관리자 비밀번호를 입력하세요 (기본값: 0000)");
+            const pwd = prompt("관리자 비밀번호를 입력하세요");
             if (pwd === "0000") {
                 if (confirm("정말 모든 플레이어와 도시 데이터를 초기화하시겠습니까?\n(삭제된 데이터는 복구할 수 없습니다.)")) {
                     try {
