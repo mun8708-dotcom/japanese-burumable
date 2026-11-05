@@ -1,4 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // --- 🎵 [효과음 시스템 (Web Audio API)] ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playTone(freq, type, duration, vol=0.1) {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+    const soundSuccess = () => { playTone(523.25, 'sine', 0.1); setTimeout(() => playTone(659.25, 'sine', 0.2), 100); setTimeout(() => playTone(783.99, 'sine', 0.3), 200); };
+    const soundFail = () => { playTone(300, 'sawtooth', 0.3); setTimeout(() => playTone(250, 'sawtooth', 0.4), 150); };
+    const soundCash = () => { playTone(800, 'sine', 0.1); setTimeout(() => playTone(1200, 'sine', 0.3), 100); };
+    const soundDice = () => { let c=0; const iv = setInterval(() => { playTone(400 + Math.random()*200, 'square', 0.05, 0.05); if(++c>8) clearInterval(iv); }, 100); };
+    // ----------------------------------------
+
     // 🔥 여기에 구글 앱스 스크립트 '웹앱 배포 URL'을 넣으세요.
     const API_URL = "https://script.google.com/macros/s/AKfycbxSYqWJ4PAaiGAUUBdeIAnOPBsCTpaORSrdoSq22bG4lBwxHjPT6ZLHJqxArnsvX6em/exec";
 
@@ -76,7 +94,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const avatars = ["🦊", "🍡", "🍣", "🥷", "👺", "🐱", "🐶", "🐰", "🐼", "🐯", "🐸", "🐷"];
 
-    // 🔥 [보안 수정] 리셋 버튼 클릭 이벤트 (안내 문구 제거됨)
+    // 🔒 [보안] 1기기 1계정 귀속 시스템
+    const savedPlayerName = localStorage.getItem("burumabul_playerName");
+    const savedPlayerToken = localStorage.getItem("burumabul_playerToken");
+
+    if (savedPlayerName && savedPlayerToken) {
+        playerName = savedPlayerName;
+        playerToken = savedPlayerToken;
+        loginModal.classList.add("hidden");
+        fetchAllData();
+    } else {
+        loginModal.classList.remove("hidden");
+    }
+
+    btnLogin.addEventListener("click", () => {
+        if (playerNameInput.value.trim() === "") {
+            alert("이름을 입력해주세요!");
+            return;
+        }
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        
+        playerName = playerNameInput.value.trim();
+        playerToken = avatars[Math.floor(Math.random() * avatars.length)];
+        
+        localStorage.setItem("burumabul_playerName", playerName);
+        localStorage.setItem("burumabul_playerToken", playerToken);
+        
+        playerNameSpan.innerText = `${playerToken} ${playerName}`;
+        playerMoneySpan.innerText = `${currentMoney.toLocaleString()}엔`;
+        
+        loginModal.classList.add("hidden");
+        fetchAllData();
+    });
+
     if (btnAdminReset) {
         btnAdminReset.addEventListener("click", async () => {
             const pwd = prompt("관리자 비밀번호를 입력하세요");
@@ -291,7 +341,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 playerToken = myData.token; 
                 playerNameSpan.innerText = `${playerToken} ${playerName}`;
                 playerMoneySpan.innerText = `${currentMoney.toLocaleString()}엔`;
-                alert(`환영합니다! 이전 위치와 자산을 불러왔습니다.`);
             } else {
                 savePlayerToServer();
             }
@@ -304,7 +353,6 @@ document.addEventListener("DOMContentLoaded", () => {
             renderBoard();
             renderAllPlayers(); 
 
-            // 🔥 오늘의 전원 출석 미션 현황 계산
             const todayStr = new Date().toLocaleDateString();
             let todayCount = 0;
             allPlayersData.forEach(p => {
@@ -329,21 +377,6 @@ document.addEventListener("DOMContentLoaded", () => {
             renderBoard();
         }
     }
-
-    btnLogin.addEventListener("click", () => {
-        if (playerNameInput.value.trim() === "") {
-            alert("이름을 입력해주세요!");
-            return;
-        }
-        playerName = playerNameInput.value.trim();
-        playerToken = avatars[Math.floor(Math.random() * avatars.length)];
-        
-        playerNameSpan.innerText = `${playerToken} ${playerName}`;
-        playerMoneySpan.innerText = `${currentMoney.toLocaleString()}엔`;
-        
-        loginModal.classList.add("hidden");
-        fetchAllData();
-    });
 
     btnRanking.addEventListener("click", async () => {
         if(!API_URL || API_URL === "여기에_웹앱_URL을_붙여넣으세요") {
@@ -478,83 +511,58 @@ document.addEventListener("DOMContentLoaded", () => {
         {"chapter": 11, "page": 92, "question": "일본 고등학교의 동아리 활동(부활동)은 필수이므로, 수업이 끝난 후 동아리 활동을 하지 않고 곧바로 하교하는 학생은 없다.", "options": ["O", "X"], "answerIndex": 1, "explanation": "동아리는 방과 후 자율적으로 이루어지며, 동아리 활동을 하지 않고 바로 집에 가는 이른바 '귀가부(帰宅部)' 학생들도 있습니다."},
         {"chapter": 11, "page": 93, "question": "일본 고등학교 체육 대회에서는 단결력을 키우는 종목을 주로 겨루며, 팀을 나눌 때는 우리나라와 마찬가지로 청팀과 백팀으로 나눈다.", "options": ["O", "X"], "answerIndex": 1, "explanation": "우리나라는 보통 청팀과 백팀으로 나누지만, 일본은 '홍팀과 백팀(홍백전)'으로 팀을 나눕니다."},
         {"chapter": 11, "page": 94, "question": "일본에서 국공립 대학교를 지원할 경우에는 1차 시험으로 반드시 '대학입학공통시험'을 응시해야 한다.", "options": ["O", "X"], "answerIndex": 0, "explanation": "국공립 대학교 지원 시 1차로 대학입학공통시험 응시가 필수입니다. 사립 대학은 학교마다 다르지만 점수가 필요한 곳도 있습니다."},
-        {"chapter": 11, "page": 96, "question": "일본의 의무 교육 과정은 소학교부터 고등학교까지 총 12년이다.", "options": ["O", "X"], "answerIndex": 1, "explanation": "일본의 의무 교육 과정은 소학교(6년)부터 중학교(3년)까지 총 9년입니다."},
+        {"chapter": 11, "page: 96, "question": "일본의 의무 교육 과정은 소학교부터 고등학교까지 총 12년이다.", "options": ["O", "X"], "answerIndex": 1, "explanation": "일본의 의무 교육 과정은 소학교(6년)부터 중학교(3년)까지 총 9년입니다."},
         {"chapter": 12, "page": 101, "question": "일본 만화(만가)는 우리나라와 마찬가지로 왼쪽에서 오른쪽으로 읽으며 가로로 줄을 바꾼다.", "options": ["O", "X"], "answerIndex": 1, "explanation": "일본 만화는 우리나라와 달리 오른쪽에서 왼쪽으로 읽으며, 대사가 세로로 쓰여 있어 오른쪽에서 왼쪽으로 줄을 바꿉니다."},
-        {"chapter": 12, "page": 103, "question": "일본 고유의 짧은 시인 '하이쿠(俳句)'는 5·7·5의 3구 17음절로 이루어져 있으며, 반드시 계절을 나타내는 단어가 들어가야 한다.", "options": ["O", "X"], "answerIndex": 0, "explanation": "하이쿠는 5·7·5의 17음절로 이루어지며, 계절감을 느낄 수 있는 단어(계어)를 꼭 넣어야 하는 규칙이 있습니다."},
+        {"chapter": 12, "page": 103, "question": "일본 고유의 짧은 시인 '하이쿠(俳句)'는 5·7·5의 3구 17음절로 이루어져 있으며, 반드시 계절을 나타내는 단어가 들어가야 한다.", "options": ["O", "X"], "answerIndex": 0, "explanation": "하이쿠는 5·7·5의 17음절로 이루어지며, 계절감이 느껴지는 단어(계어)를 꼭 넣어야 하는 규칙이 있습니다."},
         {"chapter": 12, "page": 104, "question": "일본의 전통 건축물은 지진과 고온 다습한 기후 때문에 습기 조절이 가능한 나무를 못 없이 짜 맞추어 짓는 공법이 발달했다.", "options": ["O", "X"], "answerIndex": 0, "explanation": "일본은 잦은 지진과 고온 다습한 기후를 견디기 위해 유연하고 습기 조절이 잘 되는 목조 공법(못 없이 나무를 짜 맞추는 방식)이 발달했습니다."},
         {"chapter": 12, "page": 105, "question": "일본의 전통 스포츠인 스모(相撲)에서 가장 높은 최고 등급 선수(천하장사)를 '고시엔'이라고 부른다.", "options": ["O", "X"], "answerIndex": 1, "explanation": "스모의 최고 등급 선수는 '요코즈나(横綱)'입니다. '고시엔(甲子園)'은 일본 전국 고등학교 야구 대회의 별칭이자 야구장 이름입니다."},
         {"chapter": 12, "page": 105, "question": "일본 전국 고등학교 야구 대회인 '고시엔(甲子園)'에서 시합에 진 팀의 선수들이 아쉬운 마음에 고시엔 구장의 흙을 퍼 담아가는 것은 하나의 전통이다.", "options": ["O", "X"], "answerIndex": 0, "explanation": "매년 8월 열리는 고시엔 야구 대회에서 패배한 팀의 선수들이 구장의 흙을 주머니에 퍼 담아가는 광경은 일본의 유명한 야구 전통입니다."}
     ];
 
     const goldenKeyQuizList = [
-        {
-            chapter: 1,
-            page: 15,
-            question: "일본어에서 '감사합니다'를 뜻하는 올바른 표현은 무엇일까요?",
-            options: ["오하요고자이마스", "아리가토고자이마스", "스미마센", "고멘나사이", "사요나라"],
-            answerIndex: 1, 
-            explanation: "아침 인사는 '오하요고자이마스', 감사는 '아리가토고자이마스'입니다."
-        },
-        {
-            chapter: 2,
-            page: 28,
-            question: "일본의 전통 의상인 '기모노'를 입을 때 주로 신는 신발의 이름은?",
-            options: ["게타", "조리", "스니커즈", "구두", "부츠"],
-            answerIndex: 0,
-            explanation: "기모노나 유카타를 입을 때는 주로 나무로 만든 굽이 있는 '게타'를 신습니다."
-        },
-        {"chapter": 1, "page": 11, "question": "다음 중 일본어 한자에 대한 설명으로 옳지 않은 것은 무엇일까요?", "options": ["상용한자는 총 2,136자이다.", "우리나라와 똑같은 복잡한 한자 정자를 사용한다.", "읽는 방법에는 음독과 훈독이 있다.", "하나의 한자가 두 개 이상의 음으로 읽히기도 한다.", "한자는 일정한 뜻을 나타내는 표의 문자이다."], "answerIndex": 1, "explanation": "일본어에서는 한자 정자를 쓰는 우리나라와 달리 획수를 줄인 '신자체' 한자를 주로 사용합니다."},
-        {"chapter": 1, "page": 13, "question": "다음 중 일본어 문장 부호와 그 쓰임이 올바르게 짝지어진 것은 무엇일까요?", "options": ["。(마침표) - 어휘를 열거할 때", "、(쉼표) - 문장이 끝났을 때", "「 」(낫표) - 회화문이나 인용문을 쓸 때", "『 』(겹낫표) - 물음표나 느낌표를 대신할 때", "? (물음표) - 도서명을 쓸 때"], "answerIndex": 2, "explanation": "회화문이나 인용문에는 낫표(「 」)를 쓰고, 도서명에는 겹낫표(『 』)를 사용합니다."},
-        {"chapter": 1, "page": 12, "question": "다음 중 일본어 어휘의 종류(고유어, 한자어, 외래어, 혼종어)에 포함되지 않는 것은?", "options": ["고유어", "한자어", "외래어", "혼종어", "동음이의어"], "answerIndex": 4, "explanation": "일본어 어휘는 크게 고유어, 한자어, 외래어, 혼종어로 나뉩니다. 동음이의어는 어휘의 한 종류가 아니라 발음이 같고 뜻이 다른 단어를 뜻합니다."},
-        {"chapter": 2, "page": 24, "question": "일본의 선물 문화에 대한 설명으로 가장 알맞은 단어는 무엇일까요?\n[여행지나 출장지에서 구입한 그 지역의 특산품을 가족이나 친구, 직장 동료 등에게 주는 선물]", "options": ["오카에시 (お返し)", "오지기 (おじぎ)", "오미야게 (お土産)", "푸레젠토 (プレゼント)", "우치 (内)"], "answerIndex": 2, "explanation": "지역 특산품이나 방문 시 준비하는 선물은 '오미야게'라고 합니다. 친한 사이에 주고받는 생일 선물 등은 '푸레젠토', 받은 선물에 대한 답례품은 '오카에시'라고 합니다."},
-        {"chapter": 2, "page": 24, "question": "다음 중 일본인의 일상생활 제스처에 대한 설명으로 옳지 않은 것은 무엇일까요?", "options": ["인사할 때 머리를 숙이는 동작을 오지기(おじぎ)라고 한다.", "자신을 가리킬 때는 검지를 자기 코에 댄다.", "거절을 표시할 때는 얼굴 앞에서 손날을 세워 좌우로 흔든다.", "상대방을 부를 때는 손바닥을 위로 향한 채 손가락을 까딱거린다.", "숫자를 셀 때 6~10은 양손을 이용하여 셉니다."], "answerIndex": 3, "explanation": "일본에서 상대방을 부를 때는 우리나라와 마찬가지로 손바닥을 상대방에게 보인 채 손을 위아래로 움직입니다. 마네키네코의 앞발 동작이 여기서 유래했습니다."},
-        {"chapter": 2, "page": 27, "question": "일본의 식사 예절 중 젓가락 사용 금기(해서는 안 되는 행동)와 그 뜻이 올바르게 짝지어지지 않은 것은 무엇일까요?", "options": ["하시와타시: 다른 사람과 젓가락으로 음식을 주고받는 행위", "사시바시: 젓가락으로 음식을 푹 찍어서 먹는 행위", "마요이바시: 어떤 반찬을 먹을지 젓가락을 들고 망설이는 행위", "다테바시: 식사 후 젓가락을 밥그릇 위에 가로로 얹어두는 행위", "요세바시: 젓가락으로 그릇을 끌어당겨서 먹는 행위"], "answerIndex": 3, "explanation": "다테바시(たてばし)는 젓가락을 밥에 수직으로 꽂는 행위로 금기시됩니다. 밥그릇 위에 젓가락을 얹어두는 것은 '와타시바시'라고 합니다."},
-        {"chapter": 3, "page": 37, "question": "다음 중 뜻이 같은 한국어와 일본어의 속담/관용구가 올바르게 짝지어지지 않은 것은 무엇일까요?", "options": ["원숭이도 나무에서 떨어진다 - さるも 木から 落ちる", "손을 씻다 (나쁜 일을 그만두다) - 足を 洗う (발을 씻다)", "티끌 모아 태산 - ちりも つもれば 山と なる", "뱃속이 검다 - はらが 黒い", "머리가 잘 돌아가다 - ねこの 手も 借りたい"], "answerIndex": 4, "explanation": "'ねこの 手も 借りたい(고양이 손이라도 빌리고 싶다)'는 너무 바쁘다는 뜻의 속담입니다. '머리가 잘 돌아가다'는 '頭が よく まわる'입니다."},
-        {"chapter": 3, "page": 38, "question": "일본인의 호칭 문화에 대한 설명으로 가장 알맞은 것은 무엇일까요?", "options": ["학교에서 친하지 않은 동급생을 부를 때는 성씨 없이 이름만 부른다.", "성씨의 종류가 적어 구별을 위해 성씨보다 이름을 부르는 경우가 많다.", "さん(상)은 공적인 자리나 손님을 응대할 때만 쓰는 아주 공손한 표현이다.", "일반적으로 상대방을 부를 때 성씨에 さん(상)을 붙여서 부른다.", "격식 있는 공적인 메일을 보낼 때는 이름 뒤에 ちゃん(짱)이나 くん(군)을 붙인다."], "answerIndex": 3, "explanation": "일본에서는 성씨 종류가 많아 이름보다 성씨를 부르는 경우가 많으며, 일반적으로 성씨 뒤에 さん을 붙입니다. 격식 있는 자리나 손님에게는 さま(사마)를 씁니다."},
-        {"chapter": 3, "page": 34, "question": "다음 빈칸에 공통으로 들어갈 알맞은 단어는 무엇일까요?\n일본인은 ( A )과 ( B )을 구별해서 행동하는 성향이 있다. 직설적인 비판을 삼가고 ( A )을 드러내지 않은 채 ( B )으로만 소통하는 듯하지만, 이면에는 상대방을 존중하는 마음이 있다.", "options": ["A: 겉모습(建前) / B: 속마음(本音)", "A: 속마음(本音) / B: 겉모습(建前)", "A: 소토(外) / B: 우치(内)", "A: 우치(内) / B: 소토(外)", "A: 맞장구(あいづち) / B: 오지기(おじぎ)"], "answerIndex": 1, "explanation": "일본인은 속마음(혼네, 本音)을 드러내는 것을 자제하고 겉모습(다테마에, 建前)으로 대인 관계를 원만하게 유지하려는 성향이 있습니다."},
-        {"chapter": 4, "page": 46, "question": "다음 중 일본의 기후와 지형에 대한 설명으로 옳은 것은 무엇일까요?", "options": ["동서로 길게 뻗어 있어 동서 간의 기후 차이가 크다.", "활화산은 모두 소멸하였고, 지진 활동의 영향으로만 온천이 발달했다.", "홋카이도는 냉대, 혼슈 등 본토는 온대, 남쪽 섬은 열대 기후에 속한다.", "일본 열도 주변을 '얼음의 고리'라고 부르며 자연재해가 매우 적다.", "5월부터 7월 사이에 눈이 많이 내려 교통이 마비되는 현상이 잦다."], "answerIndex": 2, "explanation": "일본은 북동에서 남서쪽으로 길게 뻗어 있어 북쪽(홋카이도)은 냉대 기후, 중간은 온대, 남쪽 섬들은 열대 기후를 보입니다."},
-        {"chapter": 4, "page": 52, "question": "다음 중 일본을 대표하는 3대 전통 축제(마쓰리)와 개최 도시가 올바르게 짝지어진 것은 무엇일까요?", "options": ["간다마쓰리 - 도쿄", "기온마쓰리 - 아오모리", "덴진마쓰리 - 삿포로", "네부타마쓰리 - 교토", "유키마쓰리 - 오사카"], "answerIndex": 0, "explanation": "일본의 3대 전통 축제는 도쿄의 간다마쓰리, 교토의 기온마쓰리, 오사카의 덴진마쓰리입니다."},
-        {"chapter": 4, "page": 48, "question": "다음 중 지역과 그 지역의 유명한 특산물(또는 명소)이 올바르게 짝지어지지 않은 것은 무엇일까요?", "options": ["홋카이도 - 털게, 삿포로 라면, 유제품", "야마가타 - 체리, 요네자와 소고기", "니가타 - 쌀, 일본 전통주", "가가와(시코쿠) - 카스텔라, 짬뽕", "시즈오카 - 차(茶), 후지산"], "answerIndex": 3, "explanation": "가가와는 '사누키우동'의 본고장으로 유명합니다. 카스텔라와 짬뽕이 유명하고 네덜란드풍의 하우스텐보스가 있는 곳은 규슈의 '나가사키'입니다."},
-        {"chapter": 5, "page": 58, "question": "다음 중 조상을 기리는 명절로, 사람들이 고향을 방문하고 수많은 불빛과 함께 '본오도리'라는 전통 춤을 추는 일본의 연중행사는 무엇일까요?", "options": ["다나바타(칠석)", "오본(お盆)", "세쓰분(節分)", "시치고산(七五三)", "히나마쓰리"], "answerIndex": 1, "explanation": "8월 15일 전후인 '오본'은 우리나라의 명절처럼 많은 사람이 고향을 방문해 조상을 기리고, 본오도리 춤을 추는 행사입니다."},
-        {"chapter": 5, "page": 59, "question": "다음 중 새해를 맞아 일본 각 가정에서 하는 장식과 그 의미가 올바르게 연결되지 않은 것은 무엇일까요?", "options": ["시메나와 - 나쁜 기운의 침입을 막기 위해 현관에 장식한다.", "가도마쓰 - 대나무와 소나무로 만들어 장수와 행운을 빈다.", "가가미모치 - 둥근 떡을 2단으로 쌓고 귤을 얹어 신에게 공양한다.", "고이노보리 - 새해 첫날 좋은 꿈(매, 가지 등)을 꾸기 위해 침실에 장식한다.", "가도마쓰와 시메나와 - 설날이 지나면 신사나 절에 가져가서 태운다."], "answerIndex": 3, "explanation": "고이노보리(잉어 모양 깃발)는 새해가 아니라 5월 5일 단오절에 남자아이의 출세와 성장을 기원하며 밖(지붕 등)에 다는 장식입니다."},
-        {"chapter": 5, "page": 60, "question": "다음 중 입춘 전날인 2월 3일경 '도깨비는 밖으로! 복은 안으로!'라고 외치며 콩을 던지는 일본의 행사 이름은 무엇일까요?", "options": ["단오절", "세쓰분(節分)", "달맞이(月見)", "시치고산(七五三)", "오미소카(大晦日)"], "answerIndex": 1, "explanation": "계절이 바뀔 때 생기기 쉬운 나쁜 기운을 막기 위해 콩을 던지고 나이만큼 볶은 콩을 먹는 행사를 '세쓰분(절분)'이라고 합니다."},
-        {"chapter": 6, "page": 66, "question": "다음 중 신사나 절에서 소원을 빌거나 이루어졌을 때 바치는 '에마(絵馬)'에 대한 설명으로 올바른 것은 무엇일까요?", "options": ["모든 에마에는 반드시 고양이 그림이 그려져 있어야 한다.", "옛 풍습의 영향으로 오각형 형태가 많으며, 보통 나무판 뒤에 소원을 적는다.", "소원이 이루어지기 전까지는 부적(오마모리)처럼 지갑에 넣고 다닌다.", "바빠서 신사에 방문하지 못하는 사람들을 위해 이메일로 제출할 수 있다.", "제물로 바치던 살아 있는 소 대신 소 그림을 그린 것에서 유래했다."], "answerIndex": 1, "explanation": "에마는 옛날 지붕을 달던 풍습 때문에 오각형이 일반적이며, 과거 제물로 바치던 '말'을 그림으로 대신한 나무판입니다."},
-        {"chapter": 6, "page": 68, "question": "마네키네코(고양이 장식품)의 색깔에 따른 의미가 올바르게 짝지어진 것은 무엇일까요?", "options": ["하얀색 - 무병장수", "빨간색 - 금전운", "검은색 - 나쁜 기운 막기(액막이)", "노란색 - 시험 합격", "파란색 - 연애 성공"], "answerIndex": 2, "explanation": "마네키네코는 하얀색(행운과 복), 검은색(나쁜 기운을 막음), 빨간색(무병장수)의 의미를 가집니다."},
-        {"chapter": 6, "page": 69, "question": "비가 그치고 날씨가 개기를 바라며 하얀색 천이나 종이 안에 동그란 것을 넣어 묶은 후 창문 등에 매달아 놓는 인형의 이름은 무엇일까요?", "options": ["에마", "다루마", "데루테루보즈", "마네키네코", "오미쿠지"], "answerIndex": 2, "explanation": "소풍이나 운동회를 앞두고 맑은 날씨를 기원하며 매달아 두는 인형은 '데루테루보즈'입니다. (반대로 비가 오기를 바랄 때는 거꾸로 매답니다.)"},
-        {"chapter": 7, "page": 73, "question": "일본의 고전 연극 가부키에 대한 설명으로 올바른 것은 무엇일까요?", "options": ["모든 등장인물은 분장을 하지 않고 맨얼굴로 연기한다.", "대체로 권선징악보다는 남녀 간의 비극적 사랑을 주로 다룬다.", "가부키좌와 같은 전용 극장이 없어서 야외에서만 정기 공연을 한다.", "노, 분라쿠와 함께 일본의 3대 고전 연극으로 꼽힌다.", "흰색 분 화장에 검은색 선을 그리면 보통 '선인(착한 사람)'을 상징한다."], "answerIndex": 3, "explanation": "가부키는 노, 분라쿠와 함께 3대 고전 연극이며, 흰 얼굴에 선을 그리는 '구마도리' 화장을 합니다. (붉은색 선이 선인, 푸른색 선이 악인을 의미합니다.)"},
-        {"chapter": 7, "page": 77, "question": "가면의 윤곽만 그려진 종이 위에 '눈을 가린 채' 눈, 코, 입 조각을 올려놓아 가장 재미있거나 평범한 얼굴을 만드는 새해 전통 놀이는 무엇일까요?", "options": ["다루마오토시 (だるま落とし)", "후쿠와라이 (ふくわらい)", "다케우마 (竹馬)", "겐다마 (けん玉)", "가루타 (かるた)"], "answerIndex": 1, "explanation": "눈을 가리고 얼굴 조각을 맞춰 우스꽝스러운 얼굴을 만들어 사람들에게 웃음과 복을 주는 놀이는 '후쿠와라이'입니다."},
-        {"chapter": 7, "page": 78, "question": "우리가 흔히 '가장 자신 있고 잘하는 것'을 뜻할 때 쓰는 '십팔번(十八番)'이라는 말의 유래로 가장 올바른 것은 무엇일까요?", "options": ["18번 숫자가 적힌 가루타 카드를 뽑은 사람이 승리하는 룰에서 유래했다.", "옛날 가부키 배우가 자신이 가장 잘하는 대본 18개를 상자에 넣어 다닌 것에서 유래했다.", "일본 다도에서 차를 18번 저어서 거품을 내는 것이 가장 맛있는 것에서 유래했다.", "다루마 인형을 18번 만에 쓰러뜨리지 않고 나무 조각을 빼내는 기술에서 유래했다.", "가부키 극장의 가장 명당자리 번호가 18번인 것에서 유래했다."], "answerIndex": 1, "explanation": "십팔번(おはこ)은 유명한 가부키 배우가 자신이 가장 잘하는 대본 열여덟 개를 상자(箱, 하코)에 넣어 가지고 다닌 것에서 유래했습니다."},
-        {"chapter": 8, "page": 81, "question": "다음 중 일본 요리에 불을 사용하는 음식보다 생선회(날것)나 절임 음식이 많이 발달하게 된 배경으로 알맞지 않은 것은 무엇일까요?", "options": ["제철에 수확한 재료의 신선함을 살리기 위해", "과거 1871년까지 불교의 영향으로 육식 금지령이 있었기 때문에", "나무로 만든 목조 주택이 많아 불 사용을 조심했기 때문에", "날씨가 건조하고 추운 기후라 불을 피우기 어려웠기 때문에", "고온 다습한 기후 때문에 음식이 상하는 것을 막으려고 진하게 간을 하거나 절였기 때문에"], "answerIndex": 3, "explanation": "일본은 춥고 건조한 것이 아니라 '고온 다습'한 기후 특성을 가집니다. 때문에 음식이 쉽게 상하는 것을 막고자 소금, 식초로 간을 한 절임 음식이 발달했습니다."},
-        {"chapter": 8, "page": 84, "question": "일본의 튀김 요리와 그에 대한 설명이 올바르게 짝지어진 것은 무엇일까요?", "options": ["가라아게 - 밀가루와 달걀물을 입힌 후 빵가루를 묻혀 튀긴 요리", "덴푸라 - 야채나 어패류 등에 밀가루와 달걀물을 튀김옷으로 사용하여 튀긴 요리", "가쓰 - 밀가루나 전분을 아주 얇게 묻혀 튀긴 닭고기 튀김 요리", "크로켓 - 돼지 등뼈를 오랜 시간 고아서 만든 튀김 요리", "가라아게 - 큰 냄비에 육수를 끓이며 식탁에서 바로 건져 먹는 전골 요리"], "answerIndex": 1, "explanation": "밀가루/전분을 얇게 묻혀 튀기는 것은 '가라아게', 빵가루를 묻혀 바삭하게 튀기는 것은 '가쓰(돈가스 등)', 으깬 감자에 빵가루를 묻힌 것은 '크로켓'입니다."},
-        {"chapter": 8, "page": 87, "question": "일본 전국 철도역에서 판매하며, 기차 여행을 하며 각 지역의 특색 있는 먹거리를 맛볼 수 있도록 만들어진 도시락을 부르는 말은 무엇일까요?", "options": ["에키벤", "캐라벤(캐릭터 도시락)", "오세치", "가이세키", "쇼진 요리"], "answerIndex": 0, "explanation": "역(에키)에서 파는 도시락(벤토)이라는 뜻으로 '에키벤(駅弁)'이라고 부릅니다."},
-        {"chapter": 9, "page": 92, "question": "일본 주택에서 화장실과 욕실(목욕 공간)을 분리해 두는 가장 주된 이유로 알맞은 것은 무엇일까요?", "options": ["욕조가 커서 화장실과 함께 둘 공간이 부족하기 때문에", "고온 다습한 기후로 인해 한 공간에 두면 습기로 곰팡이가 쉽게 생기기 때문에", "욕실에 항상 온열 장치인 고타쓰를 설치해야 하기 때문에", "지진 발생 시 신속하게 대피하기 위한 안전 확보를 위해", "나무로 만든 다다미가 물에 젖어 썩는 것을 방지하기 위해"], "answerIndex": 1, "explanation": "고온 다습한 일본 기후 특성상 화장실과 욕실이 함께 있으면 습기로 곰팡이가 생기기 쉬워 대개 분리하여 건축합니다."},
-        {"chapter": 9, "page": 94, "question": "다음 중 일본 전통 방(와시쓰)의 창문과 출입문 역할을 하며, 얇은 종이를 발라 부드러운 빛이 방 전체에 퍼지게 하는 미닫이문은 무엇일까요?", "options": ["다다미", "고타쓰", "후스마", "쇼지", "도코노마"], "answerIndex": 3, "explanation": "얇은 종이를 발라 빛이 들어오게 하는 미닫이문은 쇼지(しょうじ)입니다. (후스마는 두꺼운 종이를 발라 빛이 들어오지 않는 미닫이문입니다.)"},
-        {"chapter": 9, "page": 95, "question": "다음 중 습기를 조절하고 탈취 효과가 있는 일본 전통 바닥재이며, 일본에서 방의 크기를 잴 때(예: '6조 방') 그 단위로도 쓰이는 것은 무엇일까요?", "options": ["다다미", "고타쓰", "이중창(아마도)", "후스마", "쇼지"], "answerIndex": 0, "explanation": "다다미(たたみ)는 볏짚이나 골풀로 엮은 바닥재로, 방에 깔린 다다미의 장수로 방 크기를 나타냅니다."},
-        {"chapter": 10, "page": 102, "question": "다음 중 일본의 자동차 및 택시 문화에 대한 설명으로 옳은 것은 무엇일까요?", "options": ["자동차 운전석은 우리나라와 동일하게 왼쪽에 있다.", "택시 탑승 시 승객이 직접 뒷문을 열고 닫아야 한다.", "면허 취득 후 3년 미만인 운전자는 초보 운전 마크를 의무적으로 붙여야 한다.", "도로가 좁아 배기량 1000cc 이하의 소형차가 경차로 분류된다.", "택시의 빈 차 표시등은 대개 앞유리 왼쪽 하단에 있다."], "answerIndex": 4, "explanation": "일본은 우핸들 좌측통행이며, 택시는 자동문이므로 승객이 문을 직접 열지 않습니다. 초보 운전 마크는 면허 취득 '1년' 미만 의무입니다."},
-        {"chapter": 10, "page": 105, "question": "1964년 도쿄와 오사카 구간에 처음 개통되었으며, 현재 홋카이도부터 규슈까지 오가는 일본의 JR 고속 열차를 부르는 명칭은 무엇일까요?", "options": ["신칸센", "모노레일", "JR 패스", "지하철", "에키벤"], "answerIndex": 0, "explanation": "일본의 가장 대표적인 고속 열차는 '신칸센(新幹線)'입니다. (도카이도 신칸센 등 10개 노선 운행)"},
-        {"chapter": 10, "page": 105, "question": "단기 관광이 목적인 외국인에게만 판매하는 승차권으로, 일정 기간 동안 일본 전역의 신칸센을 비롯한 JR 열차를 무제한 이용할 수 있는 패스는 무엇일까요?", "options": ["엔조이 에코 카드", "Suica(스이카)", "PASMO(파스모)", "JR 패스", "초록색 창구 티켓"], "answerIndex": 3, "explanation": "외국인 관광객을 위한 무제한 철도 패스는 'JR 패스'입니다. 스이카나 파스모는 일반적인 충전식 교통카드(IC카드)입니다."},
-        {"chapter": 11, "page": 95, "question": "일본의 사교육 시설 중 하나로, 주로 대입을 목표로 하는 고등학교 3학년이나 재수생이 이용하며 자신이 원하는 강의를 선택해 수강하는 교육 시설은 무엇일까요?", "options": ["전문학교", "예비교", "단기 대학", "진학 학원", "보습 학원"], "answerIndex": 1, "explanation": "대학 입시 준비가 주된 목적인 교육 시설로 고3 학생이나 재수생이 다니는 곳을 '예비교'라고 합니다."},
-        {"chapter": 11, "page": 93, "question": "일본의 학교 행사 중, 연극이나 전시회, 유령의 집, 길거리 음식(다코야키, 야키소바 등)을 파는 간이식당 등을 운영하며 학생들이 주도하는 행사는 무엇일까요?", "options": ["체육 대회(体育祭)", "동아리 합숙", "재난 대피 훈련", "종업식", "문화제(文化祭)"], "answerIndex": 4, "explanation": "문화의 날(11월 3일) 무렵에 자주 열리며 무대 공연, 전시, 간이식당 등을 운영하는 행사를 문화제라고 합니다."},
-        {"chapter": 11, "page": 96, "question": "일본 교육 제도에 대한 설명으로 올바른 것은 무엇일까요?", "options": ["모든 고등학교는 예외 없이 반드시 입학시험을 통과해야 진학할 수 있다.", "약학, 수의학, 의학 등은 우리나라처럼 6년제 대학교 과정이다.", "고등학교 졸업 후 전문학교에 진학할 수 없다.", "고등전문학교는 소학교를 졸업한 후 진학하는 곳이다.", "단기 대학은 무조건 4년 과정으로만 운영된다."], "answerIndex": 1, "explanation": "대부분의 대학교는 4년제이지만, 의학/약학/수의학 등은 우리나라와 마찬가지로 6년제입니다. 고등전문학교는 중학교 졸업 후 진학하며, 단기 대학은 2~3년제입니다."},
-        {"chapter": 12, "page": 102, "question": "헤이안 시대부터 시작된 일본의 전통 궁중 음악으로 가장 오래된 형태이며, 우리나라와 중국에서 전래되어 발전한 이 음악의 이름은 무엇일까요?", "options": ["J-POP", "가부키(歌舞伎)", "노(能)", "가가쿠(雅楽)", "엔카"], "answerIndex": 3, "explanation": "일본의 전통 궁중 음악의 가장 오래된 형태는 가가쿠(아악)입니다. 가부키나 노는 가가쿠 등의 전통 음악에 기반을 둔 음악극(공연)입니다."},
-        {"chapter": 12, "page": 103, "question": "다음 중 일본 문학과 수상 작가에 대한 설명으로 올바른 것은 무엇일까요?", "options": ["무라카미 하루키와 히가시노 게이고는 일본의 역대 노벨 문학상 수상자이다.", "세계 최초의 장편 소설로 평가받는 작품은 『라쇼몬』이다.", "일본에서 가장 오래된 역사서는 『만엽집』이다.", "추리 소설에 수여하는 유명한 상은 '아쿠타가와 류노스케상'이다.", "뛰어난 순수 단편 소설에 수여하는 유명한 상은 '아쿠타가와 류노스케상'이다."], "answerIndex": 4, "explanation": "단편 순수 문학상은 아쿠타가와상, 추리 소설상은 에도가와 란포상입니다. 노벨 문학상 수상자는 가와바타 야스나리, 오에 겐자부로 두 명입니다."},
-        {"chapter": 12, "page": 104, "question": "다음 중 프랑스의 에펠 탑 디자인의 영향을 받아 만들어진 일본 도쿄의 유명한 건축물은 무엇일까요?", "options": ["도쿄 스카이트리", "도쿄 타워", "신국립경기장", "국립 신미술관", "이쓰쿠시마 신사"], "answerIndex": 1, "explanation": "프랑스 에펠 탑의 영향을 받아 붉은색과 흰색 철골로 디자인된 건축물은 도쿄 타워입니다. 스카이트리는 이후에 세워진 전파 탑입니다."}
+        { chapter: 1, page: 15, question: "일본어에서 '감사합니다'를 뜻하는 올바른 표현은 무엇일까요?", options: ["오하요고자이마스", "아리가토고자이마스", "스미마센", "고멘나사이", "사요나라"], answerIndex: 1, explanation: "아침 인사는 '오하요고자이마스', 감사는 '아리가토고자이마스'입니다." },
+        { chapter: 2, page: 28, question: "일본의 전통 의상인 '기모노'를 입을 때 주로 신는 신발의 이름은?", options: ["게타", "조리", "스니커즈", "구두", "부츠"], answerIndex: 0, explanation: "기모노나 유카타를 입을 때는 주로 나무로 만든 굽이 있는 '게타'를 신습니다." },
+        { chapter: 1, page: 11, question: "다음 중 일본어 한자에 대한 설명으로 옳지 않은 것은 무엇일까요?", options: ["상용한자는 총 2,136자이다.", "우리나라와 똑같은 복잡한 한자 정자를 사용한다.", "읽는 방법에는 음독과 훈독이 있다.", "하나의 한자가 두 개 이상의 음으로 읽히기도 한다.", "한자는 일정한 뜻을 나타내는 표의 문자이다."], answerIndex: 1, explanation: "일본어에서는 한자 정자를 쓰는 우리나라와 달리 획수를 줄인 '신자체' 한자를 주로 사용합니다." },
+        { chapter: 1, page: 13, question: "다음 중 일본어 문장 부호와 그 쓰임이 올바르게 짝지어진 것은 무엇일까요?", options: ["。(마침표) - 어휘를 열거할 때", "、(쉼표) - 문장이 끝났을 때", "「 」(낫표) - 회화문이나 인용문을 쓸 때", "『 』(겹낫표) - 물음표나 느낌표를 대신할 때", "? (물음표) - 도서명을 쓸 때"], answerIndex: 2, explanation: "회화문이나 인용문에는 낫표(「 」)를 쓰고, 도서명에는 겹낫표(『 』)를 사용합니다." },
+        { chapter: 1, page: 12, question: "다음 중 일본어 어휘의 종류(고유어, 한자어, 외래어, 혼종어)에 포함되지 않는 것은?", options: ["고유어", "한자어", "외래어", "혼종어", "동음이의어"], answerIndex: 4, explanation: "일본어 어휘는 크게 고유어, 한자어, 외래어, 혼종어로 나뉩니다. 동음이의어는 어휘의 한 종류가 아니라 발음이 같고 뜻이 다른 단어를 뜻합니다." },
+        { chapter: 2, page: 24, question: "일본의 선물 문화에 대한 설명으로 가장 알맞은 단어는 무엇일까요?\n[여행지나 출장지에서 구입한 그 지역의 특산품을 가족이나 친구, 직장 동료 등에게 주는 선물]", options: ["오카에시 (お返し)", "오지기 (おじぎ)", "오미야게 (お土産)", "푸레젠토 (プレゼント)", "우치 (内)"], answerIndex: 2, explanation: "지역 특산품이나 방문 시 준비하는 선물은 '오미야게'라고 합니다. 친한 사이에 주고받는 생일 선물 등은 '푸레젠토', 받은 선물에 대한 답례품은 '오카에시'라고 합니다." },
+        { chapter: 2, page: 24, question: "다음 중 일본인의 일상생활 제스처에 대한 설명으로 옳지 않은 것은 무엇일까요?", options: ["인사할 때 머리를 숙이는 동작을 오지기(おじぎ)라고 한다.", "자신을 가리킬 때는 검지를 자기 코에 댄다.", "거절을 표시할 때는 얼굴 앞에서 손날을 세워 좌우로 흔든다.", "상대방을 부를 때는 손바닥을 위로 향한 채 손가락을 까딱거린다.", "숫자를 셀 때 6~10은 양손을 이용하여 셉니다."], answerIndex: 3, explanation: "일본에서 상대방을 부를 때는 우리나라와 마찬가지로 손바닥을 상대방에게 보인 채 손을 위아래로 움직입니다. 마네키네코의 앞발 동작이 여기서 유래했습니다." },
+        { chapter: 2, page: 27, question: "일본의 식사 예절 중 젓가락 사용 금기(해서는 안 되는 행동)와 그 뜻이 올바르게 짝지어지지 않은 것은 무엇일까요?", options: ["하시와타시: 다른 사람과 젓가락으로 음식을 주고받는 행위", "사시바시: 젓가락으로 음식을 푹 찍어서 먹는 행위", "마요이바시: 어떤 반찬을 먹을지 젓가락을 들고 망설이는 행위", "다테바시: 식사 후 젓가락을 밥그릇 위에 가로로 얹어두는 행위", "요세바시: 젓가락으로 그릇을 끌어당겨서 먹는 행위"], answerIndex: 3, explanation: "다테바시(たてばし)는 젓가락을 밥에 수직으로 꽂는 행위로 금기시됩니다. 밥그릇 위에 젓가락을 얹어두는 것은 '와타시바시'라고 합니다." },
+        { chapter: 3, page: 37, question: "다음 중 뜻이 같은 한국어와 일본어의 속담/관용구가 올바르게 짝지어지지 않은 것은 무엇일까요?", options: ["원숭이도 나무에서 떨어진다 - さるも 木から 落ちる", "손을 씻다 (나쁜 일을 그만두다) - 足を 洗う (발을 씻다)", "티끌 모아 태산 - ちりも つもれば 山と なる", "뱃속이 검다 - はらが 黒い", "머리가 잘 돌아가다 - ねこの 手も 借りたい"], answerIndex: 4, explanation: "'ねこの 手도 借りたい(고양이 손이라도 빌리고 싶다)'는 너무 바쁘다는 뜻의 속담입니다. '머리가 잘 돌아가다'는 '頭が よく まわる'입니다." },
+        { chapter: 3, page: 38, question: "일본인의 호칭 문화에 대한 설명으로 가장 알맞은 것은 무엇일까요?", options: ["학교에서 친하지 않은 동급생을 부를 때는 성씨 없이 이름만 부른다.", "성씨의 종류가 적어 구별을 위해 성씨보다 이름을 부르는 경우가 많다.", "さん(상)은 공적인 자리나 손님을 응대할 때만 쓰는 아주 공손한 표현이다.", "일반적으로 상대방을 부를 때 성씨에 さん(상)을 붙여서 부른다.", "격식 있는 공적인 메일을 보낼 때는 이름 뒤에 ちゃん(짱)이나 くん(군)을 붙인다."], answerIndex: 3, explanation: "일본에서는 성씨 종류가 많아 이름보다 성씨를 부르는 경우가 많으며, 일반적으로 성씨 뒤에 さん을 붙입니다. 격식 있는 자리나 손님에게는 さま(사마)를 씁니다." },
+        { chapter: 3, page: 34, question: "다음 빈칸에 공통으로 들어갈 알맞은 단어는 무엇일까요?\n일본인은 ( A )과 ( B )을 구별해서 행동하는 성향이 있다. 직설적인 비판을 삼가고 ( A )을 드러내지 않은 채 ( B )으로만 소통하는 듯하지만, 이면에는 상대방을 존중하는 마음이 있다.", options: ["A: 겉모습(建前) / B: 속마음(本音)", "A: 속마음(本音) / B: 겉모습(建前)", "A: 소토(外) / B: 우치(内)", "A: 우치(内) / B: 소토(外)", "A: 맞장구(あいづち) / B: 오지기(おじぎ)"], answerIndex: 1, explanation: "일본인은 속마음(혼네, 本音)을 드러내는 것을 자제하고 겉모습(다테마에, 建前)으로 대인 관계를 원만하게 유지하려는 성향이 있습니다." },
+        { chapter: 4, page: 46, question: "다음 중 일본의 기후와 지형에 대한 설명으로 옳은 것은 무엇일까요?", options: ["동서로 길게 뻗어 있어 동서 간의 기후 차이가 크다.", "활화산은 모두 소멸하였고, 지진 활동의 영향으로만 온천이 발달했다.", "홋카이도는 냉대, 혼슈 등 본토는 온대, 남쪽 섬은 열대 기후에 속한다.", "일본 열도 주변을 '얼음의 고리'라고 부르며 자연재해가 매우 적다.", "5월부터 7월 사이에 눈이 많이 내려 교통이 마비되는 현상이 잦다."], answerIndex: 2, explanation: "일본은 북동에서 남서쪽으로 길게 뻗어 있어 북쪽(홋카이도)은 냉대 기후, 중간은 온대, 남쪽 섬들은 열대 기후를 보입니다." },
+        { chapter: 4, page: 52, question: "다음 중 일본을 대표하는 3대 전통 축제(마쓰리)와 개최 도시가 올바르게 짝지어진 것은 무엇일까요?", options: ["간다마쓰리 - 도쿄", "기온마쓰리 - 아오모리", "덴진마쓰리 - 삿포로", "네부타마쓰리 - 교토", "유키마쓰리 - 오사카"], answerIndex: 0, explanation: "일본의 3대 전통 축제는 도쿄의 간다마쓰리, 교토의 기온마쓰리, 오사카의 덴진마쓰리입니다." },
+        { chapter: 4, page: 48, question: "다음 중 지역과 그 지역의 유명한 특산물(또는 명소)이 올바르게 짝지어지지 않은 것은 무엇일까요?", options: ["홋카이도 - 털게, 삿포로 라면, 유제품", "야마가타 - 체리, 요네자와 소고기", "니가타 - 쌀, 일본 전통주", "가가와(시코쿠) - 카스텔라, 짬뽕", "시즈오카 - 차(茶), 후지산"], answerIndex: 3, explanation: "가가와는 '사누키우동'의 본고장으로 유명합니다. 카스텔라와 짬뽕이 유명하고 네덜란드풍의 하우스텐보스가 있는 곳은 규슈의 '나가사키'입니다." },
+        { chapter: 5, page: 58, question: "다음 중 조상을 기리는 명절로, 사람들이 고향을 방문하고 수많은 불빛과 함께 '본오도리'라는 전통 춤을 추는 일본의 연중행사는 무엇일까요?", options: ["다나바타(칠석)", "오본(お盆)", "세쓰분(節分)", "시치고산(七五三)", "히나마쓰리"], answerIndex: 1, explanation: "8월 15일 전후인 '오본'은 우리나라의 명절처럼 많은 사람이 고향을 방문해 조상을 기리고, 본오도리 춤을 추는 행사입니다." },
+        { chapter: 5, page: 59, question: "다음 중 새해를 맞아 일본 각 가정에서 하는 장식과 그 의미가 올바르게 연결되지 않은 것은 무엇일까요?", options: ["시메나와 - 나쁜 기운의 침입을 막기 위해 현관에 장식한다.", "가도마쓰 - 대나무와 소나무로 만들어 장수와 행운을 빈다.", "가가미모치 - 둥근 떡을 2단으로 쌓고 귤을 얹어 신에게 공양한다.", "고이노보리 - 새해 첫날 좋은 꿈(매, 가지 등)을 꾸기 위해 침실에 장식한다.", "가도마쓰와 시메나와 - 설날이 지나면 신사나 절에 가져가서 태운다."], answerIndex: 3, explanation: "고이노보리(잉어 모양 깃발)는 새해가 아니라 5월 5일 단오절에 남자아이의 출세와 성장을 기원하며 밖(지붕 등)에 다는 장식입니다." },
+        { chapter: 5, page: 60, question: "다음 중 입춘 전날인 2월 3일경 '도깨비는 밖으로! 복은 안으로!'라고 외치며 콩을 던지는 일본의 행사 이름은 무엇일까요?", options: ["단오절", "세쓰분(節分)", "달맞이(月見)", "시치고산(七五三)", "오미소카(大晦日)"], answerIndex: 1, explanation: "계절이 바뀔 때 생기기 쉬운 나쁜 기운을 막기 위해 콩을 던지고 나이만큼 볶은 콩을 먹는 행사를 '세쓰분(절분)'이라고 합니다." },
+        { chapter: 6, page: 66, question: "다음 중 신사나 절에서 소원을 빌거나 이루어졌을 때 바치는 '에마(絵馬)'에 대한 설명으로 올바른 것은 무엇일까요?", options: ["모든 에마에는 반드시 고양이 그림이 그려져 있어야 한다.", "옛 풍습의 영향으로 오각형 형태가 많으며, 보통 나무판 뒤에 소원을 적는다.", "소원이 이루어지기 전까지는 부적(오마모리)처럼 지갑에 넣고 다닌다.", "바빠서 신사에 방문하지 못하는 사람들을 위해 이메일로 제출할 수 있다.", "제물로 바치던 살아 있는 소 대신 소 그림을 그린 것에서 유래했다."], answerIndex: 1, explanation: "에마는 옛날 지붕을 달던 풍습 때문에 오각형이 일반적이며, 과거 제물로 바치던 '말'을 그림으로 대신한 나무판입니다." },
+        { chapter: 6, page: 68, question: "마네키네코(고양이 장식품)의 색깔에 따른 의미가 올바르게 짝지어진 것은 무엇일까요?", options: ["하얀색 - 무병장수", "빨간색 - 금전운", "검은색 - 나쁜 기운 막기(액막이)", "노란색 - 시험 합격", "파란색 - 연애 성공"], answerIndex: 2, explanation: "마네키네코는 하얀색(행운과 복), 검은색(나쁜 기운을 막음), 빨간색(무병장수)의 의미를 가집니다." },
+        { chapter: 6, page: 69, question: "비가 그치고 날씨가 개기를 바라며 하얀색 천이나 종이 안에 동그란 것을 넣어 묶은 후 창문 등에 매달아 놓는 인형의 이름은 무엇일까요?", options: ["에마", "다루마", "데루테루보즈", "마네키네코", "오미쿠지"], answerIndex: 2, explanation: "소풍이나 운동회를 앞두고 맑은 날씨를 기원하며 매달아 두는 인형은 '데루테루보즈'입니다. (반대로 비가 오기를 바랄 때는 거꾸로 매답니다.)" },
+        { chapter: 7, page: 73, question: "일본의 고전 연극 가부키에 대한 설명으로 올바른 것은 무엇일까요?", options: ["모든 등장인물은 분장을 하지 않고 맨얼굴로 연기한다.", "대체로 권선징악보다는 남녀 간의 비극적 사랑을 주로 다룬다.", "가부키좌와 같은 전용 극장이 없어서 야외에서만 정기 공연을 한다.", "노, 분라쿠와 함께 일본의 3대 고전 연극으로 꼽힌다.", "흰색 분 화장에 검은색 선을 그리면 보통 '선인(착한 사람)'을 상징한다."], answerIndex: 3, explanation: "가부키는 노, 분라쿠와 함께 3대 고전 연극이며, 흰 얼굴에 선을 그리는 '구마도리' 화장을 합니다. (붉은색 선이 선인, 푸른색 선이 악인을 의미합니다.)" },
+        { chapter: 7, page: 77, question: "가면의 윤곽만 그려진 종이 위에 '눈을 가린 채' 눈, 코, 입 조각을 올려놓아 가장 재미있거나 평범한 얼굴을 만드는 새해 전통 놀이는 무엇일까요?", options: ["다루마오토시 (だるま落とし)", "후쿠와라이 (ふくわらい)", "다케우마 (竹馬)", "겐다마 (けん玉)", "가루타 (かるた)"], answerIndex: 1, explanation: "눈을 가리고 얼굴 조각을 맞춰 우스꽝스러운 얼굴을 만들어 사람들에게 웃음과 복을 주는 놀이는 '후쿠와라이'입니다." },
+        { chapter: 7, page: 78, question: "우리가 흔히 '가장 자신 있고 잘하는 것'을 뜻할 때 쓰는 '십팔번(十八番)'이라는 말의 유래로 가장 올바른 것은 무엇일까요?", options: ["18번 숫자가 적힌 가루타 카드를 뽑은 사람이 승리하는 룰에서 유래했다.", "옛날 가부키 배우가 자신이 가장 잘하는 대본 18개를 상자에 넣어 다닌 것에서 유래했다.", "일본 다도에서 차를 18번 저어서 거품을 내는 것이 가장 맛있는 것에서 유래했다.", "다루마 인형을 18번 만에 쓰러뜨리지 않고 나무 조각을 빼내는 기술에서 유래했다.", "가부키 극장의 가장 명당자리 번호가 18번인 것에서 유래했다."], answerIndex: 1, explanation: "십팔번(おはこ)은 유명한 가부키 배우가 자신이 가장 잘하는 대본 열여덟 개를 상자(箱, 하코)에 넣어 가지고 다닌 것에서 유래했습니다." },
+        { chapter: 8, page: 81, question: "다음 중 일본 요리에 불을 사용하는 음식보다 생선회(날것)나 절임 음식이 많이 발달하게 된 배경으로 알맞지 않은 것은 무엇일까요?", options: ["제철에 수확한 재료의 신선함을 살리기 위해", "과거 1871년까지 불교의 영향으로 육식 금지령이 있었기 때문에", "나무로 만든 목조 주택이 많아 불 사용을 조심했기 때문에", "날씨가 건조하고 추운 기후라 불을 피우기 어려웠기 때문에", "고온 다습한 기후 때문에 음식이 상하는 것을 막으려고 진하게 간을 하거나 절였기 때문에"], answerIndex: 3, explanation: "일본은 춥고 건조한 것이 아니라 '고온 다습'한 기후 특성을 가집니다. 때문에 음식이 쉽게 상하는 것을 막고자 소금, 식초로 간을 한 절임 음식이 발달했습니다." },
+        { chapter: 8, page: 84, question: "일본의 튀김 요리와 그에 대한 설명이 올바르게 짝지어진 것은 무엇일까요?", options: ["가라아게 - 밀가루와 달걀물을 입힌 후 빵가루를 묻혀 튀긴 요리", "덴푸라 - 야채나 어패류 등에 밀가루와 달걀물을 튀김옷으로 사용하여 튀긴 요리", "가쓰 - 밀가루나 전분을 아주 얇게 묻혀 튀긴 닭고기 튀김 요리", "크로켓 - 돼지 등뼈를 오랜 시간 고아서 만든 튀김 요리", "가라아게 - 큰 냄비에 육수를 끓이며 식탁에서 바로 건져 먹는 전골 요리"], answerIndex: 1, explanation: "밀가루/전분을 얇게 묻혀 튀기는 것은 '가라아게', 빵가루를 묻혀 바삭하게 튀기는 것은 '가쓰(돈가스 등)', 으깬 감자에 빵가루를 묻힌 것은 '크로켓'입니다." },
+        { chapter: 8, page: 87, question: "일본 전국 철도역에서 판매하며, 기차 여행을 하며 각 지역의 특색 있는 먹거리를 맛볼 수 있도록 만들어진 도시락을 부르는 말은 무엇일까요?", options: ["에키벤", "캐라벤(캐릭터 도시락)", "오세치", "가이세키", "쇼진 요리"], answerIndex: 0, explanation: "역(에키)에서 파는 도시락(벤토)이라는 뜻으로 '에키벤(駅弁)'이라고 부릅니다." },
+        { chapter: 9, page: 92, question: "일본 주택에서 화장실과 욕실(목욕 공간)을 분리해 두는 가장 주된 이유로 알맞은 것은 무엇일까요?", options: ["욕조가 커서 화장실과 함께 둘 공간이 부족하기 때문에", "고온 다습한 기후로 인해 한 공간에 두면 습기로 곰팡이가 쉽게 생기기 때문에", "욕실에 항상 온열 장치인 고타쓰를 설치해야 하기 때문에", "지진 발생 시 신속하게 대피하기 위한 안전 확보를 위해", "나무로 만든 다다미가 물에 젖어 썩는 것을 방지하기 위해"], answerIndex: 1, explanation: "고온 다습한 일본 기후 특성상 화장실과 욕실이 함께 있으면 습기로 곰팡이가 생기기 쉬워 대개 분리하여 건축합니다." },
+        { chapter: 9, page: 94, question: "다음 중 일본 전통 방(와시쓰)의 창문과 출입문 역할을 하며, 얇은 종이를 발라 부드러운 빛이 방 전체에 퍼지게 하는 미닫이문은 무엇일까요?", options: ["다다미", "고타쓰", "후스마", "쇼지", "도코노마"], answerIndex: 3, explanation: "얇은 종이를 발라 빛이 들어오게 하는 미닫이문은 쇼지(しょうじ)입니다. (후스마는 두꺼운 종이를 발라 빛이 들어오지 않는 미닫이문입니다.)" },
+        { chapter: 9, page: 95, question: "다음 중 습기를 조절하고 탈취 효과가 있는 일본 전통 바닥재이며, 일본에서 방의 크기를 잴 때(예: '6조 방') 그 단위로도 쓰이는 것은 무엇일까요?", options: ["다다미", "고타쓰", "이중창(아마도)", "후스마", "쇼지"], answerIndex: 0, explanation: "다다미(たたみ)는 볏짚이나 골풀로 엮은 바닥재로, 방에 깔린 다다미의 장수로 방 크기를 나타냅니다." },
+        { chapter: 10, page: 102, question: "다음 중 일본의 자동차 및 택시 문화에 대한 설명으로 옳은 것은 무엇일까요?", options: ["자동차 운전석은 우리나라와 동일하게 왼쪽에 있다.", "택시 탑승 시 승객이 직접 뒷문을 열고 닫아야 한다.", "면허 취득 후 3년 미만인 운전자는 초보 운전 마크를 의무적으로 붙여야 한다.", "도로가 좁아 배기량 1000cc 이하의 소형차가 경차로 분류된다.", "택시의 빈 차 표시등은 대개 앞유리 왼쪽 하단에 있다."], answerIndex: 4, explanation: "일본은 우핸들 좌측통행이며, 택시는 자동문이므로 승객이 문을 직접 열지 않습니다. 초보 운전 마크는 면허 취득 '1년' 미만 의무입니다." },
+        { chapter: 10, page: 105, question: "1964년 도쿄와 오사카 구간에 처음 개통되었으며, 현재 홋카이도부터 규슈까지 오가는 일본의 JR 고속 열차를 부르는 명칭은 무엇일까요?", options: ["신칸센", "모노레일", "JR 패스", "지하철", "에키벤"], answerIndex: 0, explanation: "일본의 가장 대표적인 고속 열차는 '신칸센(新幹線)'입니다. (도카이도 신칸센 등 10개 노선 운행)" },
+        { chapter: 10, page: 105, question: "단기 관광이 목적인 외국인에게만 판매하는 승차권으로, 일정 기간 동안 일본 전역의 신칸센을 비롯한 JR 열차를 무제한 이용할 수 있는 패스는 무엇일까요?", options: ["엔조이 에코 카드", "Suica(스이카)", "PASMO(파스모)", "JR 패스", "초록색 창구 티켓"], answerIndex: 3, explanation: "외국인 관광객을 위한 무제한 철도 패스는 'JR 패스'입니다. 스이카나 파스모는 일반적인 충전식 교통카드(IC카드)입니다." },
+        { chapter: 11, page: 95, question: "일본의 사교육 시설 중 하나로, 주로 대입을 목표로 하는 고등학교 3학년이나 재수생이 이용하며 자신이 원하는 강의를 선택해 수강하는 교육 시설은 무엇일까요?", options: ["전문학교", "예비교", "단기 대학", "진학 학원", "보습 학원"], answerIndex: 1, explanation: "대학 입시 준비가 주된 목적인 교육 시설로 고3 학생이나 재수생이 다니는 곳을 '예비교'라고 합니다." },
+        { chapter: 11, page: 93, question: "일본의 학교 행사 중, 연극이나 전시회, 유령의 집, 길거리 음식(다코야키, 야키소바 등)을 파는 간이식당 등을 운영하며 학생들이 주도하는 행사는 무엇일까요?", options: ["체육 대회(体育祭)", "동아리 합숙", "재난 대피 훈련", "종업식", "문화제(文化祭)"], answerIndex: 4, explanation: "문화의 날(11월 3일) 무렵에 자주 열리며 무대 공연, 전시, 간이식당 등을 운영하는 행사를 문화제라고 합니다." },
+        { chapter: 11, page: 96, question: "일본 교육 제도에 대한 설명으로 올바른 것은 무엇일까요?", options: ["모든 고등학교는 예외 없이 반드시 입학시험을 통과해야 진학할 수 있다.", "약학, 수의학, 의학 등은 우리나라처럼 6년제 대학교 과정이다.", "고등학교 졸업 후 전문학교에 진학할 수 없다.", "고등전문학교는 소학교를 졸업한 후 진학하는 곳이다.", "단기 대학은 무조건 4년 과정으로만 운영된다."], answerIndex: 1, explanation: "대부분의 대학교는 4년제이지만, 의학/약학/수의학 등은 우리나라와 마찬가지로 6년제입니다. 고등전문학교는 중학교 졸업 후 진학하며, 단기 대학은 2~3년제입니다." },
+        { chapter: 12, page: 102, question: "헤이안 시대부터 시작된 일본의 전통 궁중 음악으로 가장 오래된 형태이며, 우리나라와 중국에서 전래되어 발전한 이 음악의 이름은 무엇일까요?", options: ["J-POP", "가부키(歌舞伎)", "노(能)", "가가쿠(雅楽)", "엔카"], answerIndex: 3, explanation: "일본의 전통 궁중 음악의 가장 오래된 형태는 가가쿠(아악)입니다. 가부키나 노는 가가쿠 등의 전통 음악에 기반을 둔 음악극(공연)입니다." },
+        { chapter: 12, page: 103, question: "다음 중 일본 문학과 수상 작가에 대한 설명으로 올바른 것은 무엇일까요?", options: ["무라카미 하루키와 히가시노 게이고는 일본의 역대 노벨 문학상 수상자이다.", "세계 최초의 장편 소설로 평가받는 작품은 『라쇼몬』이다.", "일본에서 가장 오래된 역사서는 『만엽집』이다.", "추리 소설에 수여하는 유명한 상은 '아쿠타가와 류노스케상'이다.", "뛰어난 순수 단편 소설에 수여하는 유명한 상은 '아쿠타가와 류노스케상'이다."], answerIndex: 4, explanation: "단편 순수 문학상은 아쿠타가와상, 추리 소설상은 에도가와 란포상입니다. 노벨 문학상 수상자는 가와바타 야스나리, 오에 겐자부로 두 명입니다." },
+        { chapter: 12, page: 104, question: "다음 중 프랑스의 에펠 탑 디자인의 영향을 받아 만들어진 일본 도쿄의 유명한 건축물은 무엇일까요?", options: ["도쿄 스카이트리", "도쿄 타워", "신국립경기장", "국립 신미술관", "이쓰쿠시마 신사"], answerIndex: 1, explanation: "프랑스 에펠 탑의 영향을 받아 붉은색과 흰색 철골로 디자인된 건축물은 도쿄 타워입니다. 스카이트리는 이후에 세워진 전파 탑입니다." }
     ];
 
     const checkQuizEligibility = () => {
-        const now = new Date();
-        const dateStr = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
-        const isPM = now.getHours() >= 12;
-        const timeSlot = isPM ? "PM" : "AM";
-        
-        // --- 배포 시 아래 4줄의 맨 앞 '//' 를 지워주세요 ---
-        // const lastPlayed = localStorage.getItem(`quizPlayed_${dateStr}_${timeSlot}`);
-        // if (lastPlayed) {
-        //     alert("이미 오늘 " + (isPM ? "오후" : "오전") + " 퀴즈를 모두 푸셨습니다!\n(※ 하루 제한: 오전 1회 / 오후 1회)\n다음 시간대에 다시 도전해주세요.");
-        //     return false;
-        // }
-
-        return { dateStr, timeSlot };
+        // 🔥 하루 퀴즈 제한 횟수 해제
+        return { dateStr: "always", timeSlot: "free" };
     };
 
     let currentOXIndex = 0;
@@ -566,6 +574,7 @@ document.addEventListener("DOMContentLoaded", () => {
             loginModal.classList.remove("hidden");
             return;
         }
+        if(audioCtx.state === 'suspended') audioCtx.resume();
 
         const eligibility = checkQuizEligibility();
         if (!eligibility) return;
@@ -582,7 +591,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentOXIndex >= 3) {
             quizModal.classList.add("hidden");
             
-            // 🔥 오픈 기념 정착 지원금 로직
             const bonusKey = `settlementBonus_${playerName}`;
             const hasReceivedBonus = localStorage.getItem(bonusKey);
             let bonusMoney = 0;
@@ -623,7 +631,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const currentQuiz = oxQuizList[currentOXIndex];
-        quizTitle.innerText = `🎲 오늘의 O/X 퀴즈 (${currentOXIndex + 1}/3)`;
+        quizTitle.innerHTML = `🎲 오늘의 O/X 퀴즈 (${currentOXIndex + 1}/3)<br><span style="font-size:15px; color:#4a5568;">📖 교과서 [${currentQuiz.chapter}단원 ${currentQuiz.page}쪽]</span>`;
         
         quizQuestion.innerHTML = currentQuiz.question.replace(/\n/g, '<br>');
         quizOptions.innerHTML = "";
@@ -647,7 +655,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             btn.addEventListener("click", () => {
                 const isCorrect = (index === currentQuiz.answerIndex);
-                if (isCorrect) correctOXCount++;
+                if (isCorrect) {
+                    soundSuccess();
+                    correctOXCount++;
+                } else {
+                    soundFail();
+                }
                 const resultMsg = isCorrect ? "정답입니다! ⭕" : "오답입니다. ❌";
                 alert(`${resultMsg}\n\n📖 [${currentQuiz.chapter}단원 ${currentQuiz.page}쪽]\n💡 ${currentQuiz.explanation}`);
                 currentOXIndex++;
@@ -683,7 +696,8 @@ document.addEventListener("DOMContentLoaded", () => {
         shuffle(goldenKeyQuizList);
         const currentGoldenQuiz = goldenKeyQuizList[0]; 
         
-        quizTitle.innerText = "🔑 황금열쇠 퀴즈 (심화 5지선다)";
+        // 🔥 심화 퀴즈 제목에 단원과 페이지 표시 추가
+        quizTitle.innerHTML = `🔑 황금열쇠 퀴즈 (심화)<br><span style="font-size:15px; color:#4a5568;">📖 교과서 [${currentGoldenQuiz.chapter}단원 ${currentGoldenQuiz.page}쪽]</span>`;
         quizQuestion.innerHTML = currentGoldenQuiz.question.replace(/\n/g, '<br>');
         quizOptions.innerHTML = "";
         
@@ -709,10 +723,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isCorrect = (index === currentGoldenQuiz.answerIndex);
                 
                 if(isCorrect) {
+                    soundSuccess();
                     currentMoney += 15000; 
                     playerMoneySpan.innerText = `${currentMoney.toLocaleString()}엔`;
                     alert(`정답입니다! ⭕\n\n📖 [${currentGoldenQuiz.chapter}단원 ${currentGoldenQuiz.page}쪽]\n💡 ${currentGoldenQuiz.explanation}\n\n황금열쇠 보상으로 무려 15,000엔을 획득했습니다! 💰`);
                 } else {
+                    soundFail();
                     alert(`오답입니다. ❌\n\n📖 [${currentGoldenQuiz.chapter}단원 ${currentGoldenQuiz.page}쪽]\n💡 ${currentGoldenQuiz.explanation}\n\n아쉽게도 보상을 얻지 못했습니다.`);
                 }
                 savePlayerToServer();
@@ -726,6 +742,71 @@ document.addEventListener("DOMContentLoaded", () => {
             timeLeft--;
             if (timeLeft > 0) {
                 timerInfo.innerText = `👀 문제를 신중히 읽어주세요... (${timeLeft}초 후 선택 가능)`;
+            } else {
+                clearInterval(countdown);
+                timerInfo.innerText = "✅ 이제 정답을 선택하세요!";
+                timerInfo.style.color = "#38a169";
+                buttons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                    btn.style.cursor = "pointer";
+                });
+            }
+        }, 1000);
+
+        quizModal.classList.remove("hidden");
+    };
+
+    // 🔥 무인도 탈출 퀴즈 (새로운 페널티 기능)
+    const showIslandQuiz = () => {
+        shuffle(oxQuizList);
+        const currentQuiz = oxQuizList[0];
+        
+        quizTitle.innerHTML = `🏝️ 무인도 탈출 퀴즈<br><span style="font-size:15px; color:#4a5568;">📖 교과서 [${currentQuiz.chapter}단원 ${currentQuiz.page}쪽]</span>`;
+        quizQuestion.innerHTML = currentQuiz.question.replace(/\n/g, '<br>');
+        quizOptions.innerHTML = "";
+
+        const timerInfo = document.createElement("div");
+        timerInfo.style.color = "#e53e3e";
+        timerInfo.style.fontWeight = "bold";
+        timerInfo.style.marginBottom = "15px";
+        timerInfo.innerText = "👀 문제를 읽어주세요... (3초 후 선택 가능)";
+        quizOptions.appendChild(timerInfo);
+
+        let buttons = [];
+        currentQuiz.options.forEach((opt, index) => {
+            const btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.innerText = opt; 
+            
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+            btn.style.cursor = "not-allowed";
+
+            btn.addEventListener("click", () => {
+                quizModal.classList.add("hidden");
+                const isCorrect = (index === currentQuiz.answerIndex);
+                if (isCorrect) {
+                    soundSuccess();
+                    alert(`정답입니다! ⭕\n\n직접 뗏목을 만들어 무인도에서 무료로 무사히 탈출했습니다! ⛵\n\n📖 [${currentQuiz.chapter}단원 ${currentQuiz.page}쪽]\n💡 ${currentQuiz.explanation}`);
+                } else {
+                    soundFail();
+                    setTimeout(() => soundCash(), 500); // 삐빅! 후 짤랑!
+                    currentMoney -= 5000;
+                    playerMoneySpan.innerText = `${currentMoney.toLocaleString()}엔`;
+                    alert(`오답입니다. ❌\n\n결국 구조 헬기를 불렀습니다. 🚁\n구조 비용으로 5,000엔을 지불합니다!\n\n📖 [${currentQuiz.chapter}단원 ${currentQuiz.page}쪽]\n💡 ${currentQuiz.explanation}`);
+                }
+                savePlayerToServer();
+            });
+            quizOptions.appendChild(btn);
+            buttons.push(btn);
+        });
+
+        let timeLeft = 3;
+        const countdown = setInterval(() => {
+            timeLeft--;
+            if (timeLeft > 0) {
+                timerInfo.innerText = `👀 문제를 읽어주세요... (${timeLeft}초 후 선택 가능)`;
             } else {
                 clearInterval(countdown);
                 timerInfo.innerText = "✅ 이제 정답을 선택하세요!";
@@ -802,6 +883,7 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.innerText = opt.label;
             btn.addEventListener("click", () => {
                 if (currentMoney >= opt.price) {
+                    soundCash(); // 🎵 건설 비용 지출 효과음
                     currentMoney -= opt.price;
                     
                     cellData.owner = playerName;
@@ -851,6 +933,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnTakeover.className = "option-btn";
         btnTakeover.innerText = `🤝 인수하기 (-${takeoverCost.toLocaleString()}엔)`;
         btnTakeover.addEventListener("click", () => {
+            soundCash(); // 🎵 인수 비용 지출 효과음
             currentMoney -= takeoverCost;
             cellData.owner = playerName;
             playerMoneySpan.innerText = `${currentMoney.toLocaleString()}엔`;
@@ -881,6 +964,7 @@ document.addEventListener("DOMContentLoaded", () => {
             loginModal.classList.remove("hidden");
             return;
         }
+        if(audioCtx.state === 'suspended') audioCtx.resume();
 
         if (diceCount <= 0) {
             alert("먼저 오늘의 퀴즈를 풀어 주사위 기회를 얻으세요!");
@@ -903,7 +987,9 @@ document.addEventListener("DOMContentLoaded", () => {
             diceWrapper.appendChild(die);
             diceElements.push(die);
         }
+        
         diceOverlay.classList.remove("hidden");
+        soundDice(); // 🎵 주사위 굴리는 소리
 
         setTimeout(() => {
             diceElements.forEach(die => {
@@ -934,14 +1020,19 @@ document.addEventListener("DOMContentLoaded", () => {
                         showGoldenKeyQuiz();
                     } 
                     else if (cellData.type === 'corner') {
-                        if (currentPosition === 20) { 
+                        if (cellData.name === "무인도") {
+                            alert("[무인도]에 갇혔습니다! 탈출하려면 퀴즈를 맞춰야 합니다.");
+                            showIslandQuiz(); // 🔥 추가된 무인도 퀴즈 호출
+                        } else if (currentPosition === 20) { 
+                            soundCash();
                             currentMoney -= 3000; 
                             playerMoneySpan.innerText = `${currentMoney.toLocaleString()}엔`;
                             alert("사회복지기금 칸에 도착했습니다.\n좋은 일에 3,000엔을 기부합니다!");
+                            savePlayerToServer();
                         } else {
                             alert(`[${cellData.name}] 특수 칸에 도착했습니다.`);
+                            savePlayerToServer();
                         }
-                        savePlayerToServer();
                     } 
                     else if (cellData.type === 'city') {
                         if (!cellData.owner) {
@@ -961,6 +1052,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 playerMoneySpan.innerText = `${currentMoney.toLocaleString()}엔`;
                                 savePlayerToServer();
                             } else {
+                                soundCash(); // 🎵 통행료 지출 효과음
                                 currentMoney -= tollAmount;
                                 playerMoneySpan.innerText = `${currentMoney.toLocaleString()}엔`;
                                 
